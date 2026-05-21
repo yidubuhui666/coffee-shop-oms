@@ -35,9 +35,14 @@ instance/
 # ==========================================
 #  操作系统
 # ==========================================
-.DS_Store              # macOS
-Thumbs.db              # Windows
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+# Windows
+Thumbs.db
 desktop.ini
+ehthumbs.db
 
 # ==========================================
 #  内部构建脚本（仅本地使用）
