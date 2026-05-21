@@ -1,5 +1,7 @@
 ============================================================
- Coffee Shop Order Management System (114 Yang Fan)
+ Coffee Shop Order Management System
+ Team:  114 Yang Fan  (Leader)
+        092 Xu Yueqian
 ============================================================
 
 1. ENVIRONMENT

@@ -3,6 +3,10 @@
 西南大学 2024 级计算机科学与技术 ·《数据库原理与应用》课程设计  
 Coffee Shop Order Management System (Flask + SQLAlchemy + SQLite/MySQL)
 
+**团队成员**
+- **114 杨帆**（组长）— 数据库设计、Flask 后端、集成测试
+- **092 许跃骞** — 前端模板与样式、演示数据、5 张截图、报告撰写、一键启动脚本
+
 ---
 
 ## 🚀 一键启动
@@ -119,6 +123,10 @@ zip -r submission.zip . -x "venv/*" "*/__pycache__/*" "*.pyc" "instance/*" ".git
 ## 📝 课程项目信息
 
 - **项目名**：咖啡店订单管理系统 / Coffee Shop Order Management System
-- **学号末三位+姓名**：114 杨帆
+- **团队成员**：
+  - 114 杨帆（组长）
+  - 092 许跃骞
 - **截止**：2026 年 5 月 31 日
-- **报告位置**：`docs/114Yangfan-Coffee Shop Order Management System.docx`
+- **报告位置**（每人一份，内容相同）：
+  - `docs/114Yangfan-Coffee Shop Order Management System.docx`
+  - `docs/092Xuyueqian-Coffee Shop Order Management System.docx`
