@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}员工管理{% endblock %}
+{% block body %}
+{% set role_zh = {'ADMIN':'管理员','BARISTA':'咖啡师','CASHIER':'收银员'} %}
+<div class="section-title">
+  <h2>员工管理</h2>
+  <div>
+    <form method="get" style="display:inline-block;">
+      <input type="text" name="q" value="{{ kw }}" placeholder="搜索姓名或用户名"
+             style="width:220px;display:inline-block;">
+      <button class="btn small" type="submit">搜索</button>
+    </form>
+    <a class="btn" href="{{ url_for('staff_new') }}">+ 新增员工</a>
+  </div>
+</div>
+<table>
+  <tr>
+    <th>编号</th><th>用户名</th><th>姓名</th><th>角色</th>
+    <th>手机号</th><th>入职日期</th><th>状态</th><th>操作</th>
+  </tr>
+  {% for s in staff_list %}
+  <tr>
+    <td>{{ s.staff_id }}</td>
+    <td>{{ s.username }}</td>
+    <td>{{ s.name }}{% if s.staff_id == session.staff_id %} <span style="color:#d7a86e;">（当前）</span>{% endif %}</td>
+    <td><span class="tag">{{ role_zh.get(s.role, s.role) }}</span></td>
+    <td>{{ s.phone or '-' }}</td>
+    <td>{{ s.hire_date.strftime('%Y-%m-%d') if s.hire_date else '-' }}</td>
+    <td>
+      {% if s.active %}
+        <span class="tag PAID">启用</span>
+      {% else %}
+        <span class="tag CANCELLED">停用</span>
+      {% endif %}
+    </td>
+    <td>
+      <a class="btn small" href="{{ url_for('staff_edit', sid=s.staff_id) }}">编辑</a>
+      {% if s.staff_id != session.staff_id %}
+      <form method="post" action="{{ url_for('staff_toggle', sid=s.staff_id) }}"
+            style="display:inline-block;"
+            onsubmit="return confirm('确定要{{ '停用' if s.active else '启用' }}此员工吗？');">
+        <button class="btn small {{ 'danger' if s.active else 'secondary' }}" type="submit">
+          {{ '停用' if s.active else '启用' }}
+        </button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="8" style="text-align:center;color:#8b7569;">暂无员工。</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

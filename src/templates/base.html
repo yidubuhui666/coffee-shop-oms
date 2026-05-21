@@ -18,6 +18,7 @@
     <a href="{{ url_for('customers') }}"  class="{{ 'active' if active in ['customers','customer_new'] }}">会员</a>
     {% if session.role == 'ADMIN' %}
     <a href="{{ url_for('inventory') }}"  class="{{ 'active' if active=='inventory' }}">库存</a>
+    <a href="{{ url_for('staff_list') }}" class="{{ 'active' if active in ['staff_list','staff_new','staff_edit'] }}">员工</a>
     {% endif %}
     <a href="{{ url_for('stats') }}"      class="{{ 'active' if active=='stats' }}">统计</a>
   </nav>
