@@ -1,0 +1,25 @@
+# 跨平台换行符规则 —— 避免 mac/win 协作时 git diff 把整个文件标成全改
+# 默认：仓库里都存 LF，检出到 Windows 自动转 CRLF
+* text=auto eol=lf
+
+# Windows 专用：强制 CRLF（cmd 解析 .bat 才正常）
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+*.ps1       text eol=crlf
+
+# macOS / Linux 专用：强制 LF
+*.command   text eol=lf
+*.sh        text eol=lf
+
+# 二进制：不要碰
+*.jpg       binary
+*.jpeg      binary
+*.png       binary
+*.gif       binary
+*.ico       binary
+*.docx      binary
+*.xlsx      binary
+*.pdf       binary
+*.zip       binary
+*.db        binary
+*.sqlite    binary
