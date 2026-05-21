@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}新增会员{% endblock %}
+{% block body %}
+<div class="section-title"><h2>新增会员</h2></div>
+<form method="post" style="max-width:480px;background:#fff;padding:24px;border-radius:10px;">
+  <label>姓名</label><input type="text" name="name" required>
+  <label>手机号</label><input type="text" name="phone">
+  <label>邮箱</label><input type="email" name="email">
+  <label>会员等级</label>
+  <select name="member_level">
+    <option value="BRONZE">青铜</option>
+    <option value="SILVER">白银</option>
+    <option value="GOLD">黄金</option>
+    <option value="PLATINUM">铂金</option>
+  </select>
+  <button class="btn" style="margin-top:18px;" type="submit">保存</button>
+  <a class="btn secondary" href="{{ url_for('customers') }}">取消</a>
+</form>
+{% endblock %}

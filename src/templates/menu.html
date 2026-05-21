@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}菜单{% endblock %}
+{% block body %}
+<div class="section-title">
+  <h2>菜单</h2>
+  {% if session.role == 'ADMIN' %}
+  <a class="btn" href="{{ url_for('product_new') }}">+ 新增商品</a>
+  {% endif %}
+</div>
+
+{% for cat in categories %}
+<div class="menu-cat">
+  <h3>{{ cat.name }}</h3>
+  <div class="product-grid">
+    {% for p in cat.products %}
+    <div class="product-card">
+      {% if p.image %}
+      <img src="{{ url_for('static', filename='img/products/' + p.image) }}"
+           alt="{{ p.name }}" class="product-img">
+      {% else %}
+      <div class="product-img placeholder">☕</div>
+      {% endif %}
+      <div style="display:flex;justify-content:space-between;margin-top:10px;">
+        <strong>{{ p.name }}</strong>
+        <span class="price">¥{{ '%.2f' % p.price }}</span>
+      </div>
+      <p style="color:#8b7569;font-size:13px;margin:6px 0;">{{ p.description }}</p>
+      <div style="font-size:12px;color:#5b4636;">库存：{{ p.stock }} ·
+        {% if p.available %}<span class="tag PAID">在售</span>{% else %}<span class="tag CANCELLED">停售</span>{% endif %}
+      </div>
+      {% if session.role == 'ADMIN' %}
+      <div class="actions">
+        <a class="btn small secondary" href="{{ url_for('product_edit', pid=p.product_id) }}">编辑</a>
+        <form style="display:inline;" method="post"
+              action="{{ url_for('product_delete', pid=p.product_id) }}"
+              onsubmit="return confirm('确认删除此商品？');">
+          <button class="btn small danger" type="submit">删除</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

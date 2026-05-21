@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}新建订单{% endblock %}
+{% block body %}
+<div class="section-title"><h2>新建订单</h2></div>
+<form method="post" style="background:#fff;padding:24px;border-radius:10px;">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+    <div>
+      <label>会员（可选）</label>
+      <select name="customer_id">
+        <option value="">散客</option>
+        {% set lvl = {'BRONZE':'青铜','SILVER':'白银','GOLD':'黄金','PLATINUM':'铂金'} %}
+        {% for c in customers %}
+        <option value="{{ c.customer_id }}">{{ c.name }}（{{ lvl[c.member_level] }}）</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>支付方式</label>
+      <select name="payment_method">
+        <option value="WECHAT">微信</option>
+        <option value="ALIPAY">支付宝</option>
+        <option value="CARD">银行卡</option>
+        <option value="CASH">现金</option>
+      </select>
+    </div>
+  </div>
+  <label><input type="checkbox" name="dine_in" checked> 堂食</label>
+  <label>备注</label>
+  <input type="text" name="remark" placeholder="少糖、多冰…">
+
+  <h3 style="margin-top:24px;color:#6f4e37;">商品明细</h3>
+  <div class="cart-row" style="font-weight:600;color:#5b4636;">
+    <span>商品</span><span>数量</span><span>杯型</span><span></span>
+  </div>
+  <div id="rows">
+    <div class="cart-row">
+      <select name="product_id[]">
+        <option value="">-- 请选择 --</option>
+        {% for p in products %}
+        <option value="{{ p.product_id }}">{{ p.name }} — ¥{{ '%.2f' % p.price }}</option>
+        {% endfor %}
+      </select>
+      <input type="number" name="quantity[]" min="1" value="1">
+      <select name="size[]"><option>S</option><option selected>M</option><option>L</option></select>
+      <span></span>
+    </div>
+  </div>
+  <button type="button" class="btn secondary small" onclick="addRow()">+ 增加一行</button>
+
+  <div style="margin-top:24px;">
+    <button class="btn" type="submit">提交订单</button>
+    <a class="btn secondary" href="{{ url_for('orders') }}">取消</a>
+  </div>
+</form>
+
+<template id="row-tpl">
+  <div class="cart-row">
+    <select name="product_id[]">
+      <option value="">-- 请选择 --</option>
+      {% for p in products %}
+      <option value="{{ p.product_id }}">{{ p.name }} — ¥{{ '%.2f' % p.price }}</option>
+      {% endfor %}
+    </select>
+    <input type="number" name="quantity[]" min="1" value="1">
+    <select name="size[]"><option>S</option><option selected>M</option><option>L</option></select>
+    <button type="button" class="btn danger small" onclick="this.parentNode.remove()">×</button>
+  </div>
+</template>
+<script>
+function addRow() {
+  const tpl = document.getElementById('row-tpl').content.cloneNode(true);
+  document.getElementById('rows').appendChild(tpl);
+}
+</script>
+{% endblock %}

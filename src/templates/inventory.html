@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}库存{% endblock %}
+{% block body %}
+<div class="section-title"><h2>原料库存</h2></div>
+<table>
+  <tr><th>原料</th><th>单位</th><th>库存数量</th><th>告警阈值</th><th>更新时间</th><th>操作</th></tr>
+  {% for i in items %}
+  <tr>
+    <td>{{ i.name }}</td>
+    <td>{{ i.unit }}</td>
+    <td>
+      {% if i.quantity <= i.alert_threshold %}
+        <span class="tag CANCELLED">{{ i.quantity }}（不足）</span>
+      {% else %}{{ i.quantity }}{% endif %}
+    </td>
+    <td>{{ i.alert_threshold }}</td>
+    <td>{{ i.updated_at.strftime('%Y-%m-%d %H:%M') if i.updated_at }}</td>
+    <td>
+      <form method="post" style="display:flex;gap:6px;">
+        <input type="hidden" name="ingredient_id" value="{{ i.ingredient_id }}">
+        <input type="number" step="0.01" name="quantity" value="{{ i.quantity }}" style="width:100px;">
+        <button class="btn small" type="submit">保存</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

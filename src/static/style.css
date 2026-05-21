@@ -1,0 +1,96 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+  background: #f6f3ef;
+  color: #2a211b;
+}
+a { color: #6f4e37; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+header.topbar {
+  background: #3e2723;
+  color: #f7f1ea;
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+}
+header.topbar h1 { margin: 0; font-size: 20px; letter-spacing: 1px; }
+header.topbar nav a {
+  color: #f7f1ea; margin-left: 18px; font-size: 14px;
+}
+header.topbar nav a.active { border-bottom: 2px solid #d7a86e; padding-bottom: 4px; }
+.userbox { font-size: 13px; opacity: .85; }
+.userbox a { color: #d7a86e; margin-left: 12px; }
+
+main { max-width: 1200px; margin: 24px auto; padding: 0 20px; }
+
+.flash { padding: 10px 16px; border-radius: 6px; margin-bottom: 14px; }
+.flash.ok    { background: #e7f4e4; color: #2b6a2b; }
+.flash.error { background: #fbe5e1; color: #a23a25; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 16px; }
+.card  {
+  background: #fff; border-radius: 10px; padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+.card h3 { margin: 0 0 8px; font-size: 13px; color: #8b7569; text-transform: uppercase; letter-spacing: 1px; }
+.card .num { font-size: 28px; font-weight: 600; color: #3e2723; }
+
+table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #efe7df; font-size: 14px; }
+th { background: #f1eae2; color: #5b4636; font-weight: 600; }
+tr:last-child td { border-bottom: none; }
+
+.btn {
+  display: inline-block; padding: 7px 14px; border-radius: 6px;
+  background: #6f4e37; color: #fff !important; border: none; cursor: pointer; font-size: 13px;
+}
+.btn:hover { background: #5b3f2c; text-decoration: none; }
+.btn.secondary { background: #c9b89a; color: #3e2723 !important; }
+.btn.danger    { background: #b04835; }
+.btn.small     { padding: 4px 10px; font-size: 12px; }
+
+input[type=text], input[type=password], input[type=number], input[type=email],
+select, textarea {
+  width: 100%; padding: 8px 10px; border: 1px solid #cfc3b6; border-radius: 6px;
+  font-size: 14px; background: #fff;
+}
+label { display: block; font-size: 13px; color: #5b4636; margin: 10px 0 4px; }
+
+.section-title { display: flex; justify-content: space-between; align-items: center;
+                 margin: 18px 0 12px; }
+.section-title h2 { margin: 0; font-size: 20px; color: #3e2723; }
+
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px;
+       background: #efe7df; color: #5b4636; }
+.tag.PAID, .tag.COMPLETED { background: #d8ecd1; color: #2b6a2b; }
+.tag.PENDING              { background: #fcefcb; color: #8a6700; }
+.tag.CANCELLED            { background: #f3d7d2; color: #a23a25; }
+.tag.PREPARING, .tag.READY { background: #d3e3f4; color: #25578a; }
+
+.login-wrap {
+  max-width: 360px; margin: 80px auto; background: #fff;
+  border-radius: 12px; padding: 32px; box-shadow: 0 4px 20px rgba(0,0,0,.08);
+}
+.login-wrap h2 { text-align: center; margin-top: 0; color: #3e2723; }
+.login-wrap .btn { width: 100%; padding: 10px; margin-top: 16px; }
+
+.menu-cat { margin-bottom: 28px; }
+.menu-cat h3 { color: #6f4e37; border-bottom: 2px solid #d7a86e; padding-bottom: 6px; }
+.product-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 14px; }
+.product-card { background: #fff; border-radius: 8px; padding: 14px;
+                box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+.product-card .price { color: #b04835; font-weight: 600; font-size: 16px; }
+.product-card .actions { margin-top: 10px; }
+.product-img { width: 100%; aspect-ratio: 4/3; object-fit: cover;
+               border-radius: 6px; display: block; background: #efe7df; }
+.product-img.placeholder {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 56px; color: #c9b89a; aspect-ratio: 4/3;
+}
+
+.cart-row { display: grid; grid-template-columns: 3fr 1fr 1fr 40px; gap: 8px; margin-bottom: 8px; }

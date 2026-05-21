@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}登录{% endblock %}
+{% block body %}
+<div class="login-wrap">
+  <h2>☕ 咖啡店订单管理系统</h2>
+  <form method="post">
+    <label>用户名</label>
+    <input type="text" name="username" required autofocus>
+    <label>密码</label>
+    <input type="password" name="password" required>
+    <button class="btn" type="submit">登 录</button>
+  </form>
+  <p style="font-size:12px;color:#8b7569;margin-top:18px;text-align:center;">
+    演示账号：admin / admin123<br>barista / barista123<br>cashier / cashier123
+  </p>
+</div>
+{% endblock %}

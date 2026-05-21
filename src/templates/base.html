@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}咖啡店{% endblock %} · 咖啡店订单管理系统</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% if session.staff_id %}
+<header class="topbar">
+  <h1>☕ 咖啡店订单管理系统</h1>
+  <nav>
+    {% set active = request.endpoint %}
+    <a href="{{ url_for('dashboard') }}"  class="{{ 'active' if active=='dashboard' }}">仪表盘</a>
+    <a href="{{ url_for('menu') }}"       class="{{ 'active' if active in ['menu','product_new','product_edit'] }}">菜单</a>
+    <a href="{{ url_for('order_new') }}"  class="{{ 'active' if active=='order_new' }}">下单</a>
+    <a href="{{ url_for('orders') }}"     class="{{ 'active' if active in ['orders','order_detail'] }}">订单</a>
+    <a href="{{ url_for('customers') }}"  class="{{ 'active' if active in ['customers','customer_new'] }}">会员</a>
+    {% if session.role == 'ADMIN' %}
+    <a href="{{ url_for('inventory') }}"  class="{{ 'active' if active=='inventory' }}">库存</a>
+    {% endif %}
+    <a href="{{ url_for('stats') }}"      class="{{ 'active' if active=='stats' }}">统计</a>
+  </nav>
+  <div class="userbox">
+    {{ session.name }}（{{ {'ADMIN':'管理员','BARISTA':'咖啡师','CASHIER':'收银员'}[session.role] }}）
+    <a href="{{ url_for('logout') }}">退出</a>
+  </div>
+</header>
+{% endif %}
+
+<main>
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, m in msgs %}<div class="flash {{ cat }}">{{ m }}</div>{% endfor %}
+  {% endwith %}
+  {% block body %}{% endblock %}
+</main>
+</body>
+</html>

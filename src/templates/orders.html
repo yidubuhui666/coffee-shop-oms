@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}订单{% endblock %}
+{% block body %}
+{% set st_zh = {'PENDING':'待付款','PAID':'已付款','PREPARING':'制作中','READY':'待取','COMPLETED':'已完成','CANCELLED':'已取消'} %}
+{% set pay_zh = {'WECHAT':'微信','ALIPAY':'支付宝','CARD':'银行卡','CASH':'现金'} %}
+<div class="section-title">
+  <h2>订单列表</h2>
+  <div>
+    <a class="btn small secondary" href="{{ url_for('orders') }}">全部</a>
+    {% for s in ['PENDING','PAID','PREPARING','READY','COMPLETED','CANCELLED'] %}
+    <a class="btn small secondary" href="{{ url_for('orders', status=s) }}">{{ st_zh[s] }}</a>
+    {% endfor %}
+    <a class="btn" href="{{ url_for('order_new') }}">+ 新建订单</a>
+  </div>
+</div>
+<table>
+  <tr><th>编号</th><th>时间</th><th>会员</th><th>店员</th><th>件数</th>
+      <th>金额</th><th>支付</th><th>状态</th><th></th></tr>
+  {% for o in orders %}
+  <tr>
+    <td>#{{ o.order_id }}</td>
+    <td>{{ o.order_time.strftime('%Y-%m-%d %H:%M') }}</td>
+    <td>{{ o.customer.name if o.customer else '散客' }}</td>
+    <td>{{ o.staff.name }}</td>
+    <td>{{ o.items|length }}</td>
+    <td>¥{{ '%.2f' % o.total_amount }}</td>
+    <td>{{ pay_zh.get(o.payment_method, o.payment_method) }}</td>
+    <td><span class="tag {{ o.status }}">{{ st_zh.get(o.status, o.status) }}</span></td>
+    <td><a class="btn small" href="{{ url_for('order_detail', oid=o.order_id) }}">查看</a></td>
+  </tr>
+  {% else %}
+  <tr><td colspan="9" style="text-align:center;color:#8b7569;">暂无订单。</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

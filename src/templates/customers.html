@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}会员{% endblock %}
+{% block body %}
+{% set lvl = {'BRONZE':'青铜','SILVER':'白银','GOLD':'黄金','PLATINUM':'铂金'} %}
+<div class="section-title">
+  <h2>会员管理</h2>
+  <div>
+    <form method="get" style="display:inline-block;">
+      <input type="text" name="q" value="{{ kw }}" placeholder="搜索姓名或手机号"
+             style="width:220px;display:inline-block;">
+      <button class="btn small" type="submit">搜索</button>
+    </form>
+    <a class="btn" href="{{ url_for('customer_new') }}">+ 新增会员</a>
+  </div>
+</div>
+<table>
+  <tr><th>编号</th><th>姓名</th><th>手机号</th><th>邮箱</th><th>等级</th><th>积分</th><th>注册时间</th></tr>
+  {% for c in customers %}
+  <tr>
+    <td>{{ c.customer_id }}</td>
+    <td>{{ c.name }}</td>
+    <td>{{ c.phone or '-' }}</td>
+    <td>{{ c.email or '-' }}</td>
+    <td><span class="tag">{{ lvl.get(c.member_level, c.member_level) }}</span></td>
+    <td>{{ c.points }}</td>
+    <td>{{ c.registered_at.strftime('%Y-%m-%d') if c.registered_at }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="7" style="text-align:center;color:#8b7569;">暂无会员。</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}仪表盘{% endblock %}
+{% block body %}
+<div class="section-title"><h2>仪表盘</h2></div>
+<div class="cards">
+  <div class="card"><h3>今日订单</h3><div class="num">{{ today_orders }}</div></div>
+  <div class="card"><h3>今日营收</h3><div class="num">¥{{ '%.2f' % (today_revenue or 0) }}</div></div>
+  <div class="card"><h3>商品总数</h3><div class="num">{{ total_products }}</div></div>
+  <div class="card"><h3>会员总数</h3><div class="num">{{ total_customers }}</div></div>
+</div>
+
+<div class="section-title" style="margin-top:30px;"><h2>今日畅销 Top 5</h2></div>
+<table>
+  <tr><th>排名</th><th>商品</th><th>销量</th></tr>
+  {% for name, qty in top_products %}
+    <tr><td>{{ loop.index }}</td><td>{{ name }}</td><td>{{ qty }}</td></tr>
+  {% else %}
+    <tr><td colspan="3" style="text-align:center;color:#8b7569;">暂无销售。</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

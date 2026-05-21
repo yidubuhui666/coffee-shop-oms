@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}统计{% endblock %}
+{% block body %}
+<div class="section-title"><h2>经营统计</h2></div>
+
+<h3>近 14 天营收</h3>
+<table>
+  <tr><th>日期</th><th>订单数</th><th>营业额</th></tr>
+  {% for d, c, amt in daily %}
+  <tr><td>{{ d }}</td><td>{{ c }}</td><td>¥{{ '%.2f' % (amt or 0) }}</td></tr>
+  {% else %}
+  <tr><td colspan="3" style="text-align:center;color:#8b7569;">暂无数据。</td></tr>
+  {% endfor %}
+</table>
+
+<h3 style="margin-top:24px;">商品销量排行</h3>
+<table>
+  <tr><th>排名</th><th>商品</th><th>销量</th><th>营业额</th></tr>
+  {% for name, qty, amt in products %}
+  <tr><td>{{ loop.index }}</td><td>{{ name }}</td><td>{{ qty }}</td><td>¥{{ '%.2f' % (amt or 0) }}</td></tr>
+  {% else %}
+  <tr><td colspan="4" style="text-align:center;color:#8b7569;">暂无销售。</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}
