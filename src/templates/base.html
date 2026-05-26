@@ -17,8 +17,9 @@
     <a href="{{ url_for('orders') }}"     class="{{ 'active' if active in ['orders','order_detail'] }}">订单</a>
     <a href="{{ url_for('customers') }}"  class="{{ 'active' if active in ['customers','customer_new'] }}">会员</a>
     {% if session.role == 'ADMIN' %}
-    <a href="{{ url_for('inventory') }}"  class="{{ 'active' if active=='inventory' }}">库存</a>
+    <a href="{{ url_for('inventory') }}"  class="{{ 'active' if active in ['inventory','inventory_new'] }}">库存</a>
     <a href="{{ url_for('recipes') }}"    class="{{ 'active' if active=='recipes' }}">配方</a>
+    <a href="{{ url_for('promotions') }}" class="{{ 'active' if active in ['promotions','promotion_new'] }}">促销</a>
     <a href="{{ url_for('staff_list') }}" class="{{ 'active' if active in ['staff_list','staff_new','staff_edit'] }}">员工</a>
     {% endif %}
     <a href="{{ url_for('analytics') }}"  class="{{ 'active' if active in ['analytics','stats'] }}">统计</a>

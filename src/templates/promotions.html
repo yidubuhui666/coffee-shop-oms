@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}促销管理{% endblock %}
+{% block body %}
+<div class="section-title">
+  <h2>促销码管理</h2>
+  <a class="btn" href="{{ url_for('promotion_new') }}">+ 新增促销码</a>
+</div>
+<p style="color:#8b7569;margin-top:-6px;">
+  下单时输入优惠码可享受对应折扣。如果客户是会员，系统自动取「会员折扣」与「优惠码折扣」中更优惠的一项。
+</p>
+<table>
+  <tr>
+    <th>编号</th><th>促销码</th><th>名称</th><th>折扣</th>
+    <th>有效期</th><th>状态</th><th>操作</th>
+  </tr>
+  {% for p in promos %}
+  {% set expired = p.end_date and p.end_date < today %}
+  <tr>
+    <td>#{{ p.promo_id }}</td>
+    <td><code style="font-size:14px;font-weight:600;color:#6f4e37;">{{ p.code }}</code></td>
+    <td>{{ p.name }}</td>
+    <td><strong style="color:#b04835;">{{ (p.discount*100)|int }} 折</strong></td>
+    <td style="font-size:12px;">
+      {{ p.start_date.strftime('%Y-%m-%d') if p.start_date else '—' }} ~
+      {{ p.end_date.strftime('%Y-%m-%d') if p.end_date else '永久' }}
+    </td>
+    <td>
+      {% if not p.active %}<span class="tag CANCELLED">已停用</span>
+      {% elif expired %}<span class="tag CANCELLED">已过期</span>
+      {% else %}<span class="tag PAID">使用中</span>{% endif %}
+    </td>
+    <td>
+      <form method="post" action="{{ url_for('promotion_toggle', pid=p.promo_id) }}"
+            style="display:inline-block;">
+        <button class="btn small {{ 'danger' if p.active else 'secondary' }}" type="submit">
+          {{ '停用' if p.active else '启用' }}
+        </button>
+      </form>
+      <form method="post" action="{{ url_for('promotion_delete', pid=p.promo_id) }}"
+            style="display:inline-block;"
+            onsubmit="return confirm('确定要删除促销码「{{ p.code }}」吗？');">
+        <button class="btn small danger" type="submit">删除</button>
+      </form>
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="7" style="text-align:center;color:#8b7569;padding:30px;">暂无促销码</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

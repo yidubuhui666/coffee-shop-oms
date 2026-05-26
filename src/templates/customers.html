@@ -31,7 +31,7 @@
 
 <table style="margin-top:14px;">
   <tr><th>编号</th><th>姓名</th><th>手机号</th><th>邮箱</th><th>等级</th>
-      <th>积分</th><th>注册时间</th></tr>
+      <th>积分</th><th>注册时间</th><th>操作</th></tr>
   {% for c in customers %}
   <tr>
     <td>{{ c.customer_id }}</td>
@@ -41,9 +41,19 @@
     <td><span class="tag lvl-tag-{{ c.member_level }}">{{ lvl.get(c.member_level, c.member_level) }}</span></td>
     <td>{{ c.points }}</td>
     <td>{{ c.registered_at.strftime('%Y-%m-%d') if c.registered_at }}</td>
+    <td>
+      <a class="btn small" href="{{ url_for('customer_edit', cid=c.customer_id) }}">编辑</a>
+      {% if session.role == 'ADMIN' %}
+      <form method="post" action="{{ url_for('customer_delete', cid=c.customer_id) }}"
+            style="display:inline-block;"
+            onsubmit="return confirm('确定要删除会员「{{ c.name }}」吗？其历史订单将转为散客。');">
+        <button class="btn small danger" type="submit">删除</button>
+      </form>
+      {% endif %}
+    </td>
   </tr>
   {% else %}
-  <tr><td colspan="7" style="text-align:center;color:#8b7569;padding:30px;">该等级下暂无会员。</td></tr>
+  <tr><td colspan="8" style="text-align:center;color:#8b7569;padding:30px;">该等级下暂无会员。</td></tr>
   {% endfor %}
 </table>
 

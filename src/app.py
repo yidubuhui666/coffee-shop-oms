@@ -329,6 +329,8 @@ def _register_routes(app: Flask) -> None:
         q = Order.query.order_by(Order.order_time.desc())
         status = request.args.get("status")
         when = request.args.get("when", "today")  # today / history / all
+        page = request.args.get("page", 1, type=int)
+        per_page = 30
 
         today = date.today()
         if when == "today":
@@ -347,7 +349,11 @@ def _register_routes(app: Flask) -> None:
         cnt_history = base.filter(func.date(Order.order_time) <  today).count()
         cnt_all     = base.count()
 
-        return render_template("orders.html", orders=q.limit(300).all(),
+        pagination = q.paginate(page=page, per_page=per_page, error_out=False)
+
+        return render_template("orders.html",
+                               orders=pagination.items,
+                               pagination=pagination,
                                cur_status=status, when=when,
                                cnt_today=cnt_today, cnt_history=cnt_history,
                                cnt_all=cnt_all)
@@ -495,7 +501,33 @@ def _register_routes(app: Flask) -> None:
             db.session.commit()
             flash("会员已添加。", "ok")
             return redirect(url_for("customers"))
-        return render_template("customer_form.html")
+        return render_template("customer_form.html", customer=None)
+
+    @app.route("/customers/<int:cid>/edit", methods=["GET", "POST"])
+    @login_required
+    def customer_edit(cid):
+        c = db.session.get(Customer, cid) or abort(404)
+        if request.method == "POST":
+            c.name = request.form["name"].strip()
+            c.phone = request.form.get("phone") or None
+            c.email = request.form.get("email") or None
+            c.member_level = request.form.get("member_level", c.member_level)
+            db.session.commit()
+            flash("会员信息已更新。", "ok")
+            return redirect(url_for("customers"))
+        return render_template("customer_form.html", customer=c)
+
+    @app.route("/customers/<int:cid>/delete", methods=["POST"])
+    @login_required
+    @admin_required
+    def customer_delete(cid):
+        c = db.session.get(Customer, cid) or abort(404)
+        # 把这个会员的历史订单 customer_id 置为 NULL（保留订单记录）
+        Order.query.filter_by(customer_id=cid).update({"customer_id": None})
+        db.session.delete(c)
+        db.session.commit()
+        flash(f"会员 {c.name} 已删除（其历史订单转为散客）。", "ok")
+        return redirect(url_for("customers"))
 
     # ---- Staff (admin only) ----
     @app.route("/staff")
@@ -572,11 +604,106 @@ def _register_routes(app: Flask) -> None:
             iid = int(request.form["ingredient_id"])
             item = Inventory.query.get_or_404(iid)
             item.quantity = Decimal(request.form["quantity"])
+            if request.form.get("alert_threshold"):
+                item.alert_threshold = Decimal(request.form["alert_threshold"])
             db.session.commit()
             flash("库存已更新。", "ok")
             return redirect(url_for("inventory"))
         return render_template("inventory.html",
                                items=Inventory.query.order_by(Inventory.name).all())
+
+    @app.route("/inventory/new", methods=["GET", "POST"])
+    @login_required
+    @admin_required
+    def inventory_new():
+        if request.method == "POST":
+            name = request.form["name"].strip()
+            if Inventory.query.filter_by(name=name).first():
+                flash(f"原料「{name}」已存在。", "error")
+                return redirect(url_for("inventory_new"))
+            db.session.add(Inventory(
+                name=name,
+                unit=request.form["unit"].strip(),
+                quantity=Decimal(request.form.get("quantity") or "0"),
+                alert_threshold=Decimal(request.form.get("alert_threshold") or "10"),
+            ))
+            db.session.commit()
+            flash(f"原料「{name}」已添加。", "ok")
+            return redirect(url_for("inventory"))
+        return render_template("inventory_form.html")
+
+    @app.route("/inventory/<int:iid>/delete", methods=["POST"])
+    @login_required
+    @admin_required
+    def inventory_delete(iid):
+        item = db.session.get(Inventory, iid) or abort(404)
+        # 检查是否被配方引用
+        used = ProductIngredient.query.filter_by(ingredient_id=iid).count()
+        if used > 0:
+            flash(f"无法删除「{item.name}」：还有 {used} 个商品的配方在使用。", "error")
+            return redirect(url_for("inventory"))
+        db.session.delete(item)
+        db.session.commit()
+        flash(f"原料「{item.name}」已删除。", "ok")
+        return redirect(url_for("inventory"))
+
+    # ---- Promotions (admin only) ----
+    @app.route("/promotions")
+    @login_required
+    @admin_required
+    def promotions():
+        today = date.today()
+        all_promos = Promotion.query.order_by(
+            Promotion.active.desc(), Promotion.promo_id.desc()).all()
+        return render_template("promotions.html", promos=all_promos, today=today)
+
+    @app.route("/promotions/new", methods=["GET", "POST"])
+    @login_required
+    @admin_required
+    def promotion_new():
+        if request.method == "POST":
+            code = request.form["code"].strip().upper()
+            if Promotion.query.filter_by(code=code).first():
+                flash(f"优惠码「{code}」已存在。", "error")
+                return redirect(url_for("promotion_new"))
+            db.session.add(Promotion(
+                code=code,
+                name=request.form["name"].strip(),
+                discount=Decimal(request.form["discount"]),
+                start_date=datetime.strptime(request.form["start_date"], "%Y-%m-%d").date()
+                           if request.form.get("start_date") else date.today(),
+                end_date=datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
+                         if request.form.get("end_date") else None,
+                active=True,
+            ))
+            db.session.commit()
+            flash(f"优惠码「{code}」已创建。", "ok")
+            return redirect(url_for("promotions"))
+        return render_template("promotion_form.html")
+
+    @app.route("/promotions/<int:pid>/toggle", methods=["POST"])
+    @login_required
+    @admin_required
+    def promotion_toggle(pid):
+        p = db.session.get(Promotion, pid) or abort(404)
+        p.active = not p.active
+        db.session.commit()
+        flash(f"优惠码「{p.code}」已{'启用' if p.active else '停用'}。", "ok")
+        return redirect(url_for("promotions"))
+
+    @app.route("/promotions/<int:pid>/delete", methods=["POST"])
+    @login_required
+    @admin_required
+    def promotion_delete(pid):
+        p = db.session.get(Promotion, pid) or abort(404)
+        used = Order.query.filter_by(promo_id=pid).count()
+        if used > 0:
+            flash(f"无法删除「{p.code}」：已被 {used} 个订单使用，请改为停用。", "error")
+            return redirect(url_for("promotions"))
+        db.session.delete(p)
+        db.session.commit()
+        flash(f"优惠码「{p.code}」已删除。", "ok")
+        return redirect(url_for("promotions"))
 
     # 旧 /stats 重定向到合并后的 /analytics
     @app.route("/stats")

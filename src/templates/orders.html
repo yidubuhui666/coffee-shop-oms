@@ -55,6 +55,45 @@
   {% endfor %}
 </table>
 
+{% if pagination and pagination.pages > 1 %}
+<div class="pager">
+  <span class="pager-info">
+    第 {{ pagination.page }} / {{ pagination.pages }} 页 · 共 {{ pagination.total }} 条
+  </span>
+  <div>
+    {% if pagination.has_prev %}
+      <a class="btn small secondary"
+         href="{{ url_for('orders', when=when, status=cur_status, page=pagination.prev_num) }}">‹ 上一页</a>
+    {% endif %}
+
+    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if p %}
+        {% if p == pagination.page %}
+          <span class="btn small page-cur">{{ p }}</span>
+        {% else %}
+          <a class="btn small secondary"
+             href="{{ url_for('orders', when=when, status=cur_status, page=p) }}">{{ p }}</a>
+        {% endif %}
+      {% else %}
+        <span style="color:#8b7569;padding:0 4px;">…</span>
+      {% endif %}
+    {% endfor %}
+
+    {% if pagination.has_next %}
+      <a class="btn small secondary"
+         href="{{ url_for('orders', when=when, status=cur_status, page=pagination.next_num) }}">下一页 ›</a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<style>
+.pager { display:flex; justify-content:space-between; align-items:center;
+         margin-top:16px; flex-wrap:wrap; gap:10px; }
+.pager-info { color:#8b7569; font-size:13px; }
+.page-cur { background:#6f4e37 !important; color:#fff !important; }
+</style>
+
 <style>
 .tabbar { display:flex; gap:4px; border-bottom:2px solid #d7a86e; margin-top:10px; }
 .tab    { padding:10px 22px; color:#5b4636; font-size:14px; border-radius:8px 8px 0 0;

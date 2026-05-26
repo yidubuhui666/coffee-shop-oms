@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% block title %}库存{% endblock %}
 {% block body %}
-<div class="section-title"><h2>原料库存</h2></div>
+<div class="section-title">
+  <h2>原料库存</h2>
+  <a class="btn" href="{{ url_for('inventory_new') }}">+ 新增原料</a>
+</div>
 <table>
   <tr><th>原料</th><th>单位</th><th>库存数量</th><th>告警阈值</th><th>更新时间</th><th>操作</th></tr>
   {% for i in items %}
@@ -16,10 +19,18 @@
     <td>{{ i.alert_threshold }}</td>
     <td>{{ i.updated_at.strftime('%Y-%m-%d %H:%M') if i.updated_at }}</td>
     <td>
-      <form method="post" style="display:flex;gap:6px;">
+      <form method="post" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
         <input type="hidden" name="ingredient_id" value="{{ i.ingredient_id }}">
-        <input type="number" step="0.01" name="quantity" value="{{ i.quantity }}" style="width:100px;">
+        <input type="number" step="0.01" name="quantity" value="{{ i.quantity }}"
+               style="width:90px;" title="库存数量">
+        <input type="number" step="0.01" name="alert_threshold" value="{{ i.alert_threshold }}"
+               style="width:80px;" title="告警阈值">
         <button class="btn small" type="submit">保存</button>
+      </form>
+      <form method="post" action="{{ url_for('inventory_delete', iid=i.ingredient_id) }}"
+            style="display:inline-block;margin-top:4px;"
+            onsubmit="return confirm('确定要删除原料「{{ i.name }}」吗？');">
+        <button class="btn small danger" type="submit">删除</button>
       </form>
     </td>
   </tr>
