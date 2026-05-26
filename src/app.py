@@ -10,7 +10,8 @@ from sqlalchemy import func
 
 from config import Config
 from models import (db, Customer, Staff, Category, Product,
-                    Order, OrderItem, Inventory, Promotion)
+                    Order, OrderItem, Inventory, Promotion,
+                    ProductIngredient, MemberDiscount)
 
 
 def create_app() -> Flask:
@@ -279,8 +280,18 @@ def _register_routes(app: Flask) -> None:
     def order_new():
         if request.method == "POST":
             cid_raw = request.form.get("customer_id")
+            promo_code = request.form.get("promo_code", "").strip()
+
+            # 优惠券查找
+            promo = None
+            if promo_code:
+                promo = Promotion.query.filter_by(code=promo_code, active=True).first()
+                if not promo:
+                    flash(f"优惠码 {promo_code} 无效或已失效。", "error")
+
             order = Order(customer_id=int(cid_raw) if cid_raw else None,
                           staff_id=session["staff_id"],
+                          promo_id=promo.promo_id if promo else None,
                           payment_method=request.form.get("payment_method", "WECHAT"),
                           dine_in=("dine_in" in request.form),
                           remark=request.form.get("remark"))
@@ -290,19 +301,55 @@ def _register_routes(app: Flask) -> None:
             ids   = request.form.getlist("product_id[]")
             qtys  = request.form.getlist("quantity[]")
             sizes = request.form.getlist("size[]")
-            total = Decimal("0")
+            subtotal = Decimal("0")
+            consume_map = {}   # ingredient_id -> 总消耗量
+
             for pid, qty, sz in zip(ids, qtys, sizes):
                 if not pid or int(qty) <= 0:
                     continue
                 p = Product.query.get(int(pid))
+                qty_int = int(qty)
                 item = OrderItem(order_id=order.order_id, product_id=p.product_id,
-                                 quantity=int(qty), unit_price=p.price, size=sz or "M")
-                total += p.price * int(qty)
+                                 quantity=qty_int, unit_price=p.price, size=sz or "M")
+                subtotal += p.price * qty_int
                 db.session.add(item)
 
+                # 累计原料消耗
+                for link in ProductIngredient.query.filter_by(product_id=p.product_id).all():
+                    consume_map[link.ingredient_id] = (
+                        consume_map.get(link.ingredient_id, Decimal("0"))
+                        + Decimal(str(link.consume_qty)) * qty_int)
+
+            # 会员折扣（多表 JOIN：customer + member_discount）
+            total = subtotal
+            discount_rate = Decimal("1.00")
+            if order.customer_id:
+                md = (db.session.query(MemberDiscount)
+                      .join(Customer, Customer.member_level == MemberDiscount.level)
+                      .filter(Customer.customer_id == order.customer_id).first())
+                if md:
+                    discount_rate = Decimal(str(md.discount))
+            # 优惠券折扣（取更优惠）
+            if promo:
+                promo_rate = Decimal(str(promo.discount))
+                if promo_rate < discount_rate:
+                    discount_rate = promo_rate
+            total = (subtotal * discount_rate).quantize(Decimal("0.01"))
+
             order.total_amount = total
+
+            # 自动扣减原料库存
+            for iid, qty_consumed in consume_map.items():
+                inv = db.session.get(Inventory, iid)
+                if inv:
+                    inv.quantity = (Decimal(str(inv.quantity)) - qty_consumed)
+
             db.session.commit()
-            flash(f"订单 #{order.order_id} 已创建。", "ok")
+            msg = f"订单 #{order.order_id} 已创建（原价 ¥{subtotal:.2f}"
+            if discount_rate < 1:
+                msg += f"，{int(discount_rate*100)}折后 ¥{total:.2f}"
+            msg += "）"
+            flash(msg, "ok")
             return redirect(url_for("order_detail", oid=order.order_id))
 
         return render_template("order_new.html",
@@ -465,6 +512,121 @@ def _register_routes(app: Flask) -> None:
     def api_product(pid):
         p = Product.query.get_or_404(pid)
         return jsonify({"id": p.product_id, "name": p.name, "price": float(p.price)})
+
+    # ---- 数据分析（多表联查报表）----
+    @app.route("/analytics")
+    @login_required
+    def analytics():
+        # 1. 会员消费 TOP10（customers + orders + order_items 三表 JOIN）
+        top_customers = (db.session.query(
+                Customer.name, Customer.member_level,
+                func.count(Order.order_id.distinct()).label("order_cnt"),
+                func.sum(OrderItem.quantity * OrderItem.unit_price).label("amt"))
+            .join(Order,     Order.customer_id == Customer.customer_id)
+            .join(OrderItem, OrderItem.order_id == Order.order_id)
+            .filter(Order.status != "CANCELLED")
+            .group_by(Customer.customer_id)
+            .order_by(func.sum(OrderItem.quantity * OrderItem.unit_price).desc())
+            .limit(10).all())
+
+        # 2. 员工业绩排行（staff + orders + order_items 三表 JOIN）
+        top_staff = (db.session.query(
+                Staff.name, Staff.role,
+                func.count(Order.order_id.distinct()).label("order_cnt"),
+                func.sum(OrderItem.quantity).label("item_cnt"),
+                func.sum(OrderItem.quantity * OrderItem.unit_price).label("amt"))
+            .join(Order,     Order.staff_id == Staff.staff_id)
+            .join(OrderItem, OrderItem.order_id == Order.order_id)
+            .filter(Order.status != "CANCELLED")
+            .group_by(Staff.staff_id)
+            .order_by(func.sum(OrderItem.quantity * OrderItem.unit_price).desc()).all())
+
+        # 3. 分类销售分析（categories + products + order_items 三表 JOIN）
+        cat_sales = (db.session.query(
+                Category.name,
+                func.count(Product.product_id.distinct()).label("prod_cnt"),
+                func.sum(OrderItem.quantity).label("qty"),
+                func.sum(OrderItem.quantity * OrderItem.unit_price).label("amt"))
+            .join(Product,   Product.category_id == Category.category_id)
+            .join(OrderItem, OrderItem.product_id == Product.product_id)
+            .join(Order,     Order.order_id == OrderItem.order_id)
+            .filter(Order.status != "CANCELLED")
+            .group_by(Category.category_id)
+            .order_by(func.sum(OrderItem.quantity * OrderItem.unit_price).desc()).all())
+
+        # 4. 商品搭配分析（order_items 自连接 + products 两次 JOIN）
+        oi1 = db.aliased(OrderItem)
+        oi2 = db.aliased(OrderItem)
+        p1  = db.aliased(Product)
+        p2  = db.aliased(Product)
+        pairs = (db.session.query(
+                p1.name.label("a"), p2.name.label("b"),
+                func.count().label("times"))
+            .select_from(oi1)
+            .join(oi2, (oi1.order_id == oi2.order_id) & (oi1.product_id < oi2.product_id))
+            .join(p1, p1.product_id == oi1.product_id)
+            .join(p2, p2.product_id == oi2.product_id)
+            .group_by(p1.name, p2.name)
+            .order_by(func.count().desc()).limit(10).all())
+
+        # 5. 时段热度（按下单小时聚合，orders + order_items）
+        hourly = (db.session.query(
+                func.hour(Order.order_time).label("h"),
+                func.count(Order.order_id.distinct()).label("orders"),
+                func.sum(OrderItem.quantity).label("cups"))
+            .join(OrderItem, OrderItem.order_id == Order.order_id)
+            .filter(Order.status != "CANCELLED")
+            .group_by(func.hour(Order.order_time))
+            .order_by(func.hour(Order.order_time)).all())
+
+        # 6. 原料消耗预测（inventory + product_ingredient + order_items + products 四表 JOIN）
+        ing_use = (db.session.query(
+                Inventory.name, Inventory.unit, Inventory.quantity,
+                Inventory.alert_threshold,
+                func.coalesce(func.sum(
+                    ProductIngredient.consume_qty * OrderItem.quantity), 0).label("used"))
+            .outerjoin(ProductIngredient,
+                       ProductIngredient.ingredient_id == Inventory.ingredient_id)
+            .outerjoin(OrderItem,
+                       OrderItem.product_id == ProductIngredient.product_id)
+            .outerjoin(Order,
+                       (Order.order_id == OrderItem.order_id) & (Order.status != "CANCELLED"))
+            .group_by(Inventory.ingredient_id)
+            .order_by(func.coalesce(func.sum(
+                ProductIngredient.consume_qty * OrderItem.quantity), 0).desc()).all())
+
+        # 7. 滞销商品（products LEFT JOIN order_items，最近 7 天未销售）
+        cutoff = datetime.now() - timedelta(days=7)
+        sold_recently = (db.session.query(OrderItem.product_id)
+            .join(Order, Order.order_id == OrderItem.order_id)
+            .filter(Order.order_time >= cutoff).distinct().subquery())
+        slow_movers = (db.session.query(
+                Product.name, Category.name.label("cat"),
+                Product.price, Product.stock)
+            .join(Category, Category.category_id == Product.category_id)
+            .filter(~Product.product_id.in_(db.session.query(sold_recently)))
+            .order_by(Product.stock.desc()).all())
+
+        # 8. 会员等级分布与消费力对比（customers + member_discount + orders）
+        level_stat = (db.session.query(
+                MemberDiscount.label, MemberDiscount.discount,
+                func.count(Customer.customer_id.distinct()).label("cust_cnt"),
+                func.coalesce(func.sum(Order.total_amount), 0).label("amt"))
+            .outerjoin(Customer, Customer.member_level == MemberDiscount.level)
+            .outerjoin(Order,
+                       (Order.customer_id == Customer.customer_id) & (Order.status != "CANCELLED"))
+            .group_by(MemberDiscount.level, MemberDiscount.discount, MemberDiscount.label)
+            .order_by(MemberDiscount.discount).all())
+
+        return render_template("analytics.html",
+                               top_customers=top_customers,
+                               top_staff=top_staff,
+                               cat_sales=cat_sales,
+                               pairs=pairs,
+                               hourly=hourly,
+                               ing_use=ing_use,
+                               slow_movers=slow_movers,
+                               level_stat=level_stat)
 
 
 # ----------------------------------------------------------------------

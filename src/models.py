@@ -102,3 +102,26 @@ class Inventory(db.Model):
     alert_threshold = db.Column(db.Numeric(10, 2), default=10)
     updated_at      = db.Column(db.DateTime, default=datetime.utcnow,
                                 onupdate=datetime.utcnow)
+
+
+class ProductIngredient(db.Model):
+    """商品-原料关联表（多对多）：每杯商品消耗的原料种类与数量。"""
+    __tablename__ = "product_ingredient"
+    product_id    = db.Column(db.Integer,
+                              db.ForeignKey("products.product_id"),
+                              primary_key=True)
+    ingredient_id = db.Column(db.Integer,
+                              db.ForeignKey("inventory.ingredient_id"),
+                              primary_key=True)
+    consume_qty   = db.Column(db.Numeric(8, 3), nullable=False)
+
+    product    = db.relationship("Product",   backref="ingredient_links")
+    ingredient = db.relationship("Inventory", backref="product_links")
+
+
+class MemberDiscount(db.Model):
+    """会员等级折扣表：BRONZE/SILVER/GOLD/PLATINUM 各自的折扣率。"""
+    __tablename__ = "member_discount"
+    level    = db.Column(db.String(10), primary_key=True)
+    discount = db.Column(db.Numeric(4, 2), nullable=False)
+    label    = db.Column(db.String(20), nullable=False)

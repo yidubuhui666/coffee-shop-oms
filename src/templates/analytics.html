@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}数据分析{% endblock %}
+{% block body %}
+{% set role_zh = {'ADMIN':'管理员','BARISTA':'咖啡师','CASHIER':'收银员'} %}
+<div class="section-title"><h2>数据分析（多表联查报表）</h2></div>
+<p style="color:#8b7569;margin-top:-6px;">
+  本页 8 张报表均由 3~5 张表 JOIN 聚合得到，演示了 customers / staff / categories / products /
+  order_items / orders / inventory / product_ingredient / member_discount 之间的关联关系。
+</p>
+
+<!-- 1. 会员消费 TOP10 -->
+<h3 style="margin-top:24px;color:#6f4e37;">① 会员消费 TOP 10
+  <small style="color:#8b7569;font-weight:normal;">customers ⋈ orders ⋈ order_items</small>
+</h3>
+<table>
+  <tr><th>排名</th><th>姓名</th><th>等级</th><th>订单数</th><th>消费金额</th></tr>
+  {% for name, lvl, cnt, amt in top_customers %}
+  <tr><td>{{ loop.index }}</td><td>{{ name }}</td><td><span class="tag">{{ lvl }}</span></td>
+      <td>{{ cnt }}</td><td>¥{{ '%.2f' % (amt or 0) }}</td></tr>
+  {% else %}<tr><td colspan="5" style="text-align:center;color:#8b7569;">暂无数据</td></tr>{% endfor %}
+</table>
+
+<!-- 2. 员工业绩 -->
+<h3 style="margin-top:24px;color:#6f4e37;">② 员工业绩排行
+  <small style="color:#8b7569;font-weight:normal;">staff ⋈ orders ⋈ order_items</small>
+</h3>
+<table>
+  <tr><th>排名</th><th>姓名</th><th>角色</th><th>订单数</th><th>售出杯数</th><th>营业额</th></tr>
+  {% for name, role, ocnt, icnt, amt in top_staff %}
+  <tr><td>{{ loop.index }}</td><td>{{ name }}</td>
+      <td><span class="tag">{{ role_zh.get(role, role) }}</span></td>
+      <td>{{ ocnt }}</td><td>{{ icnt }}</td><td>¥{{ '%.2f' % (amt or 0) }}</td></tr>
+  {% else %}<tr><td colspan="6" style="text-align:center;color:#8b7569;">暂无数据</td></tr>{% endfor %}
+</table>
+
+<!-- 3. 分类销售 -->
+<h3 style="margin-top:24px;color:#6f4e37;">③ 分类销售分析
+  <small style="color:#8b7569;font-weight:normal;">categories ⋈ products ⋈ order_items ⋈ orders</small>
+</h3>
+<table>
+  <tr><th>分类</th><th>商品数</th><th>售出杯数</th><th>营业额</th></tr>
+  {% for cat, pcnt, qty, amt in cat_sales %}
+  <tr><td>{{ cat }}</td><td>{{ pcnt }}</td><td>{{ qty }}</td>
+      <td>¥{{ '%.2f' % (amt or 0) }}</td></tr>
+  {% else %}<tr><td colspan="4" style="text-align:center;color:#8b7569;">暂无数据</td></tr>{% endfor %}
+</table>
+
+<!-- 4. 商品搭配 -->
+<h3 style="margin-top:24px;color:#6f4e37;">④ 商品搭配 TOP 10（同一订单内）
+  <small style="color:#8b7569;font-weight:normal;">order_items 自连接 ⋈ products × 2</small>
+</h3>
+<table>
+  <tr><th>组合</th><th>共同出现次数</th></tr>
+  {% for a, b, t in pairs %}
+  <tr><td>{{ a }} + {{ b }}</td><td>{{ t }} 次</td></tr>
+  {% else %}<tr><td colspan="2" style="text-align:center;color:#8b7569;">暂无数据</td></tr>{% endfor %}
+</table>
+
+<!-- 5. 时段热度 -->
+<h3 style="margin-top:24px;color:#6f4e37;">⑤ 时段热度图（按下单小时）
+  <small style="color:#8b7569;font-weight:normal;">orders ⋈ order_items + GROUP BY HOUR()</small>
+</h3>
+<table>
+  <tr><th>时段</th><th>订单数</th><th>售出杯数</th><th>分布</th></tr>
+  {% set max_o = (hourly|map(attribute=1)|max) or 1 %}
+  {% for h, o, c in hourly %}
+  <tr><td>{{ '%02d' % h }}:00 - {{ '%02d' % (h+1) }}:00</td><td>{{ o }}</td><td>{{ c }}</td>
+      <td><div style="background:#d7a86e;height:14px;width:{{ (o/max_o*200)|int }}px;border-radius:3px;"></div></td></tr>
+  {% else %}<tr><td colspan="4" style="text-align:center;color:#8b7569;">暂无数据</td></tr>{% endfor %}
+</table>
+
+<!-- 6. 原料消耗预测 -->
+<h3 style="margin-top:24px;color:#6f4e37;">⑥ 原料消耗与库存预警
+  <small style="color:#8b7569;font-weight:normal;">inventory ⋈ product_ingredient ⋈ order_items ⋈ orders</small>
+</h3>
+<table>
+  <tr><th>原料</th><th>当前库存</th><th>已消耗</th><th>告警阈值</th><th>状态</th></tr>
+  {% for name, unit, qty, alert, used in ing_use %}
+  <tr><td>{{ name }}</td><td>{{ qty }} {{ unit }}</td>
+      <td>{{ '%.2f' % (used or 0) }} {{ unit }}</td>
+      <td>{{ alert }} {{ unit }}</td>
+      <td>{% if qty <= alert %}<span class="tag CANCELLED">库存不足</span>
+          {% else %}<span class="tag PAID">充足</span>{% endif %}</td></tr>
+  {% endfor %}
+</table>
+
+<!-- 7. 滞销商品 -->
+<h3 style="margin-top:24px;color:#6f4e37;">⑦ 滞销商品（最近 7 天无销售）
+  <small style="color:#8b7569;font-weight:normal;">products LEFT JOIN order_items + 子查询</small>
+</h3>
+<table>
+  <tr><th>商品</th><th>分类</th><th>售价</th><th>库存</th></tr>
+  {% for name, cat, price, stock in slow_movers %}
+  <tr><td>{{ name }}</td><td>{{ cat }}</td><td>¥{{ '%.2f' % price }}</td><td>{{ stock }}</td></tr>
+  {% else %}<tr><td colspan="4" style="text-align:center;color:#8b7569;">所有商品近 7 天均有销售</td></tr>{% endfor %}
+</table>
+
+<!-- 8. 会员等级分布 -->
+<h3 style="margin-top:24px;color:#6f4e37;">⑧ 会员等级消费力对比
+  <small style="color:#8b7569;font-weight:normal;">member_discount ⋈ customers ⋈ orders</small>
+</h3>
+<table>
+  <tr><th>等级</th><th>折扣</th><th>会员数</th><th>总消费</th><th>人均消费</th></tr>
+  {% for label, disc, cnt, amt in level_stat %}
+  <tr><td>{{ label }}</td><td>{{ (disc*100)|int }}%</td><td>{{ cnt }}</td>
+      <td>¥{{ '%.2f' % (amt or 0) }}</td>
+      <td>¥{{ '%.2f' % ((amt or 0)/cnt) if cnt else '0.00' }}</td></tr>
+  {% endfor %}
+</table>
+
+{% endblock %}
