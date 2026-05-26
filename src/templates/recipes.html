@@ -19,7 +19,7 @@
     <div class="recipe-card">
       <div class="recipe-head">
         {% if p.img %}
-          <img src="{{ url_for('static', filename=p.img) }}" class="recipe-img">
+          <img src="{{ url_for('static', filename='img/products/' + p.img) }}" class="recipe-img">
         {% else %}
           <div class="recipe-img placeholder">☕</div>
         {% endif %}
@@ -72,9 +72,16 @@
       </div>
       <table class="recipe-table">
         <tr><th>用于商品</th><th>分类</th><th>单杯消耗</th></tr>
-        {% for p in i.products %}
+        {% for p in i.prods %}
         <tr>
-          <td>{{ p.name }}</td>
+          <td style="display:flex;align-items:center;gap:8px;">
+            {% if p.img %}
+              <img src="{{ url_for('static', filename='img/products/' + p.img) }}" class="ing-thumb">
+            {% else %}
+              <span class="ing-thumb placeholder">☕</span>
+            {% endif %}
+            {{ p.name }}
+          </td>
           <td><span class="tag">{{ p.cat }}</span></td>
           <td>{{ p.consume }} {{ i.unit }}</td>
         </tr>
@@ -97,6 +104,9 @@
 .recipe-name { font-size:16px; font-weight:600; color:#3e2723; }
 .recipe-table { font-size:13px; box-shadow:none; }
 .recipe-table th, .recipe-table td { padding:6px 8px; }
+.ing-thumb { width:32px; height:32px; border-radius:4px; object-fit:cover; }
+.ing-thumb.placeholder { display:inline-flex; align-items:center; justify-content:center;
+                         background:#f7eee4; color:#c9b89a; font-size:18px; }
 </style>
 
 <script>

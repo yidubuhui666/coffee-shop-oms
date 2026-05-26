@@ -546,7 +546,8 @@ def _register_routes(app: Flask) -> None:
         rows2 = (db.session.query(
                 Inventory.ingredient_id, Inventory.name, Inventory.unit,
                 Inventory.quantity, Inventory.alert_threshold,
-                Product.name.label("pname"), Category.name.label("cat"),
+                Product.name.label("pname"), Product.image.label("pimg"),
+                Category.name.label("cat"),
                 ProductIngredient.consume_qty)
             .outerjoin(ProductIngredient,
                        ProductIngredient.ingredient_id == Inventory.ingredient_id)
@@ -555,13 +556,13 @@ def _register_routes(app: Flask) -> None:
             .order_by(Inventory.name, Product.product_id).all())
 
         by_ing = {}
-        for iid, iname, unit, qty, alert, pname, cat, consume in rows2:
+        for iid, iname, unit, qty, alert, pname, pimg, cat, consume in rows2:
             if iid not in by_ing:
                 by_ing[iid] = {"name": iname, "unit": unit, "stock": qty,
-                               "low": qty <= alert, "products": []}
+                               "low": qty <= alert, "prods": []}
             if pname:
-                by_ing[iid]["products"].append({
-                    "name": pname, "cat": cat, "consume": consume
+                by_ing[iid]["prods"].append({
+                    "name": pname, "img": pimg, "cat": cat, "consume": consume
                 })
 
         return render_template("recipes.html",
