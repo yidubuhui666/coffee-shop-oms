@@ -1,39 +1,161 @@
 {% extends "base.html" %}
 {% block title %}库存{% endblock %}
 {% block body %}
+
+{# 统计：低库存数、原料总数 #}
+{% set low_count = items|selectattr('quantity','le',0)|list|length %}
+{% set ns = namespace(low=0) %}
+{% for i in items %}{% if i.quantity <= i.alert_threshold %}{% set ns.low = ns.low + 1 %}{% endif %}{% endfor %}
+
 <div class="section-title">
   <h2>原料库存</h2>
   <a class="btn" href="{{ url_for('inventory_new') }}">+ 新增原料</a>
 </div>
-<table>
-  <tr><th>原料</th><th>单位</th><th>库存数量</th><th>告警阈值</th><th>更新时间</th><th>操作</th></tr>
+
+<!-- 顶部小卡片 -->
+<div class="inv-stats">
+  <div class="inv-stat">
+    <div class="inv-stat-num">{{ items|length }}</div>
+    <div class="inv-stat-lbl">原料总数</div>
+  </div>
+  <div class="inv-stat warn">
+    <div class="inv-stat-num">{{ ns.low }}</div>
+    <div class="inv-stat-lbl">库存预警</div>
+  </div>
+  <div class="inv-stat ok">
+    <div class="inv-stat-num">{{ items|length - ns.low }}</div>
+    <div class="inv-stat-lbl">库存充足</div>
+  </div>
+</div>
+
+<!-- 筛选栏 -->
+<div class="filter-bar">
+  <a href="#" class="filter on" onclick="filterInv('all');return false;" id="f-all">全部</a>
+  <a href="#" class="filter"    onclick="filterInv('low');return false;" id="f-low">仅显示预警</a>
+  <input type="text" id="searchInv" placeholder="🔍 搜索原料..." oninput="filterInv()"
+         style="margin-left:auto;width:200px;">
+</div>
+
+<!-- 卡片网格 -->
+<div class="inv-grid" id="invGrid">
   {% for i in items %}
-  <tr>
-    <td>{{ i.name }}</td>
-    <td>{{ i.unit }}</td>
-    <td>
-      {% if i.quantity <= i.alert_threshold %}
-        <span class="tag CANCELLED">{{ i.quantity }}（不足）</span>
-      {% else %}{{ i.quantity }}{% endif %}
-    </td>
-    <td>{{ i.alert_threshold }}</td>
-    <td>{{ i.updated_at.strftime('%Y-%m-%d %H:%M') if i.updated_at }}</td>
-    <td>
-      <form method="post" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-        <input type="hidden" name="ingredient_id" value="{{ i.ingredient_id }}">
-        <input type="number" step="0.01" name="quantity" value="{{ i.quantity }}"
-               style="width:90px;" title="库存数量">
-        <input type="number" step="0.01" name="alert_threshold" value="{{ i.alert_threshold }}"
-               style="width:80px;" title="告警阈值">
-        <button class="btn small" type="submit">保存</button>
-      </form>
-      <form method="post" action="{{ url_for('inventory_delete', iid=i.ingredient_id) }}"
-            style="display:inline-block;margin-top:4px;"
-            onsubmit="return confirm('确定要删除原料「{{ i.name }}」吗？');">
-        <button class="btn small danger" type="submit">删除</button>
-      </form>
-    </td>
-  </tr>
+  {% set is_low = i.quantity <= i.alert_threshold %}
+  {% set thr = i.alert_threshold|float %}
+  {% set qty = i.quantity|float %}
+  {% if thr > 0 %}
+    {% set width_pct = (qty / (thr * 2) * 100)|int %}
+  {% else %}
+    {% set width_pct = 100 %}
+  {% endif %}
+  {% if width_pct > 100 %}{% set width_pct = 100 %}{% endif %}
+  {% if width_pct < 2 %}{% set width_pct = 2 %}{% endif %}
+  <div class="inv-card {{ 'low' if is_low }}" data-name="{{ i.name|lower }}" data-low="{{ '1' if is_low else '0' }}">
+    <div class="inv-head">
+      <div>
+        <div class="inv-name">{{ i.name }}</div>
+        <div class="inv-meta">单位：{{ i.unit }} · 更新于 {{ i.updated_at.strftime('%m-%d %H:%M') if i.updated_at else '—' }}</div>
+      </div>
+      {% if is_low %}<span class="tag CANCELLED">⚠️ 不足</span>
+      {% else %}<span class="tag PAID">✓ 充足</span>{% endif %}
+    </div>
+
+    <!-- 库存进度条 -->
+    <div class="inv-bar-wrap">
+      <div class="inv-bar {{ 'low' if is_low }}" style="width:{{ width_pct }}%;"></div>
+      <div class="inv-bar-label">
+        <strong>{{ i.quantity }}</strong> / 阈值 {{ i.alert_threshold }} {{ i.unit }}
+      </div>
+    </div>
+
+    <!-- 内联编辑表单 -->
+    <form method="post" class="inv-form">
+      <input type="hidden" name="ingredient_id" value="{{ i.ingredient_id }}">
+      <div class="inv-input-row">
+        <div>
+          <label>库存数量</label>
+          <input type="number" step="0.01" name="quantity" value="{{ i.quantity }}">
+        </div>
+        <div>
+          <label>告警阈值</label>
+          <input type="number" step="0.01" name="alert_threshold" value="{{ i.alert_threshold }}">
+        </div>
+      </div>
+      <div class="inv-btns">
+        <button class="btn small" type="submit">💾 保存</button>
+        <button class="btn small danger" type="submit"
+                formaction="{{ url_for('inventory_delete', iid=i.ingredient_id) }}"
+                onclick="return confirm('确定要删除原料「{{ i.name }}」吗？');">
+          🗑️ 删除
+        </button>
+      </div>
+    </form>
+  </div>
+  {% else %}
+  <div style="grid-column:1/-1;text-align:center;color:#8b7569;padding:40px;background:#fff;border-radius:10px;">
+    暂无原料，点击右上角「+ 新增原料」开始添加。
+  </div>
   {% endfor %}
-</table>
+</div>
+
+<style>
+/* 顶部小卡片 */
+.inv-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:18px; }
+.inv-stat  { background:#fff; padding:18px; border-radius:10px; text-align:center;
+             box-shadow:0 1px 3px rgba(0,0,0,.06); border-left:4px solid #6f4e37; }
+.inv-stat.warn { border-left-color:#b04835; }
+.inv-stat.ok   { border-left-color:#2b6a2b; }
+.inv-stat-num { font-size:28px; font-weight:700; color:#3e2723; }
+.inv-stat-lbl { font-size:12px; color:#8b7569; margin-top:4px; letter-spacing:1px; }
+
+/* 筛选栏 */
+.filter-bar { display:flex; gap:8px; margin-bottom:18px; align-items:center; }
+.filter    { padding:8px 16px; border-radius:6px; background:#fff;
+             color:#5b4636; font-size:13px; border:1px solid #efe7df; }
+.filter:hover { text-decoration:none; background:#f7eee4; }
+.filter.on { background:#6f4e37; color:#fff !important; border-color:#6f4e37; }
+
+/* 卡片网格 */
+.inv-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; }
+.inv-card { background:#fff; padding:16px; border-radius:12px;
+            box-shadow:0 1px 3px rgba(0,0,0,.06); border-top:4px solid #6f4e37;
+            transition:transform .15s, box-shadow .15s; }
+.inv-card:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.08); }
+.inv-card.low   { border-top-color:#b04835; }
+
+.inv-head  { display:flex; justify-content:space-between; align-items:flex-start;
+             gap:10px; margin-bottom:10px; }
+.inv-name  { font-size:16px; font-weight:600; color:#3e2723; }
+.inv-meta  { font-size:11px; color:#8b7569; margin-top:2px; }
+
+.inv-bar-wrap { background:#f1eae2; height:22px; border-radius:11px; position:relative;
+                margin:12px 0; overflow:hidden; }
+.inv-bar     { height:100%; background:linear-gradient(90deg,#2b6a2b,#7bb87b);
+               border-radius:11px; transition:width .4s; }
+.inv-bar.low { background:linear-gradient(90deg,#b04835,#e87a4a); }
+.inv-bar-label { position:absolute; inset:0; display:flex; align-items:center;
+                 justify-content:center; font-size:12px; color:#3e2723; font-weight:500;
+                 text-shadow:0 1px 2px rgba(255,255,255,.6); }
+
+.inv-form { border-top:1px solid #efe7df; padding-top:10px; margin-top:6px; }
+.inv-input-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.inv-input-row label { font-size:11px; color:#8b7569; margin:0 0 2px; display:block; }
+.inv-input-row input { padding:5px 8px; font-size:13px; }
+.inv-btns { display:flex; gap:6px; margin-top:8px; justify-content:flex-end; }
+</style>
+
+<script>
+function filterInv(mode) {
+  const kw = document.getElementById('searchInv').value.trim().toLowerCase();
+  if (mode) {
+    document.getElementById('f-all').classList.toggle('on', mode === 'all');
+    document.getElementById('f-low').classList.toggle('on', mode === 'low');
+  }
+  const onlyLow = document.getElementById('f-low').classList.contains('on');
+  document.querySelectorAll('.inv-card').forEach(card => {
+    const matchKw  = !kw || card.dataset.name.includes(kw);
+    const matchLow = !onlyLow || card.dataset.low === '1';
+    card.style.display = (matchKw && matchLow) ? '' : 'none';
+  });
+}
+</script>
 {% endblock %}
