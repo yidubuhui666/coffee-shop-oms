@@ -24,6 +24,21 @@ def create_app() -> Flask:
         _bootstrap_demo_data()
 
     _register_routes(app)
+
+    # 把活跃员工列表注入到所有模板（供右上角"切换账号"下拉用）
+    @app.context_processor
+    def inject_switchable_staff():
+        if "staff_id" not in session or session.get("role") != "ADMIN":
+            return {"switchable_staff": []}
+        try:
+            staff_list = Staff.query.filter_by(active=True)\
+                            .order_by(Staff.role.desc(), Staff.staff_id).all()
+            return {"switchable_staff": [
+                s for s in staff_list if s.staff_id != session.get("staff_id")
+            ]}
+        except Exception:
+            return {"switchable_staff": []}
+
     return app
 
 
@@ -198,6 +213,21 @@ def _register_routes(app: Flask) -> None:
     def logout():
         session.clear()
         return redirect(url_for("login"))
+
+    @app.route("/switch_to/<int:sid>", methods=["POST"])
+    @login_required
+    @admin_required
+    def switch_to(sid):
+        """快速切换到另一个员工账号（仅管理员可用，无需密码）"""
+        target = db.session.get(Staff, sid)
+        if not target or not target.active:
+            flash("目标账号无效或已停用。", "error")
+            return redirect(request.referrer or url_for("dashboard"))
+        session["staff_id"] = target.staff_id
+        session["name"]     = target.name
+        session["role"]     = target.role
+        flash(f"已切换为 {target.name}（{target.role}）。", "ok")
+        return redirect(url_for("dashboard"))
 
     # ---- Dashboard ----
     @app.route("/")

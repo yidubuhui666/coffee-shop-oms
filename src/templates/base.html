@@ -25,11 +25,72 @@
     <a href="{{ url_for('analytics') }}"  class="{{ 'active' if active in ['analytics','stats'] }}">统计</a>
   </nav>
   <div class="userbox">
-    {{ session.name }}（{{ {'ADMIN':'管理员','BARISTA':'咖啡师','CASHIER':'收银员'}[session.role] }}）
+    {% set role_zh = {'ADMIN':'管理员','BARISTA':'咖啡师','CASHIER':'收银员'} %}
+    {% if switchable_staff %}
+    <div class="user-dropdown">
+      <button type="button" class="user-btn" onclick="toggleSwitch()">
+        {{ session.name }}（{{ role_zh[session.role] }}） ▾
+      </button>
+      <div class="switch-menu" id="switchMenu">
+        <div class="switch-head">快速切换账号</div>
+        {% for s in switchable_staff %}
+        <form method="post" action="{{ url_for('switch_to', sid=s.staff_id) }}">
+          <button type="submit" class="switch-item">
+            <span class="switch-name">{{ s.name }}</span>
+            <span class="switch-role role-{{ s.role }}">{{ role_zh.get(s.role, s.role) }}</span>
+          </button>
+        </form>
+        {% endfor %}
+        <div class="switch-divider"></div>
+        <a class="switch-item logout" href="{{ url_for('logout') }}">🚪 退出登录</a>
+      </div>
+    </div>
+    {% else %}
+    {{ session.name }}（{{ role_zh[session.role] }}）
     <a href="{{ url_for('logout') }}">退出</a>
+    {% endif %}
   </div>
 </header>
 {% endif %}
+
+<style>
+.user-dropdown { position:relative; display:inline-block; }
+.user-btn {
+  background:transparent; color:#f7f1ea; border:1px solid rgba(247,241,234,.3);
+  border-radius:6px; padding:5px 12px; cursor:pointer; font-size:13px;
+  font-family:inherit; transition:background .15s;
+}
+.user-btn:hover { background:rgba(247,241,234,.1); }
+
+.switch-menu {
+  display:none; position:absolute; right:0; top:calc(100% + 6px);
+  background:#fff; border-radius:10px; padding:6px 0; min-width:220px;
+  box-shadow:0 6px 20px rgba(0,0,0,.18); z-index:1000;
+}
+.switch-menu.open { display:block; }
+.switch-head {
+  font-size:11px; color:#8b7569; padding:8px 14px;
+  border-bottom:1px solid #efe7df; letter-spacing:1px;
+}
+.switch-item {
+  display:flex; justify-content:space-between; align-items:center; gap:10px;
+  width:100%; padding:9px 14px; border:none; background:transparent;
+  color:#3e2723 !important; font-size:14px; text-align:left; cursor:pointer;
+  font-family:inherit;
+}
+.switch-item:hover { background:#f7eee4; text-decoration:none; }
+.switch-name { font-weight:500; }
+.switch-role {
+  font-size:11px; padding:2px 8px; border-radius:10px;
+}
+.switch-role.role-ADMIN   { background:#f3d7d2; color:#a23a25; }
+.switch-role.role-BARISTA { background:#d8ecd1; color:#2b6a2b; }
+.switch-role.role-CASHIER { background:#fcefcb; color:#8a6700; }
+
+.switch-divider { height:1px; background:#efe7df; margin:4px 0; }
+.switch-item.logout { color:#b04835 !important; }
+.switch-menu form { margin:0; }
+</style>
 
 <main>
   {% with msgs = get_flashed_messages(with_categories=true) %}
@@ -37,5 +98,15 @@
   {% endwith %}
   {% block body %}{% endblock %}
 </main>
+<script>
+function toggleSwitch() {
+  document.getElementById('switchMenu').classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  const dd = document.querySelector('.user-dropdown');
+  const menu = document.getElementById('switchMenu');
+  if (menu && dd && !dd.contains(e.target)) menu.classList.remove('open');
+});
+</script>
 </body>
 </html>
