@@ -177,13 +177,21 @@ def _register_routes(app: Flask) -> None:
     @app.route("/login", methods=["GET", "POST"])
     def login():
         if request.method == "POST":
-            user = Staff.query.filter_by(username=request.form["username"]).first()
-            if user and user.password == request.form["password"] and user.active:
+            uname = request.form.get("username", "").strip()
+            pwd   = request.form.get("password", "")
+            user  = Staff.query.filter_by(username=uname).first()
+
+            if not user:
+                flash("账号无效。", "error")
+            elif not user.active:
+                flash("该账号已被停用，请联系管理员。", "error")
+            elif user.password != pwd:
+                flash("密码错误。", "error")
+            else:
                 session["staff_id"], session["name"], session["role"] = (
                     user.staff_id, user.name, user.role)
                 flash(f"欢迎，{user.name}！", "ok")
                 return redirect(url_for("dashboard"))
-            flash("用户名或密码错误。", "error")
         return render_template("login.html")
 
     @app.route("/logout")
