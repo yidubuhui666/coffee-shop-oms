@@ -513,6 +513,61 @@ def _register_routes(app: Flask) -> None:
         p = Product.query.get_or_404(pid)
         return jsonify({"id": p.product_id, "name": p.name, "price": float(p.price)})
 
+    # ---- 配方管理（商品-原料关系）----
+    @app.route("/recipes")
+    @login_required
+    def recipes():
+        # 视角1: 按商品分组（products ⋈ categories ⋈ product_ingredient ⋈ inventory）
+        rows = (db.session.query(
+                Product.product_id, Product.name, Product.image, Product.price,
+                Category.name.label("cat"),
+                Inventory.name.label("ing"), Inventory.unit,
+                Inventory.quantity, Inventory.alert_threshold,
+                ProductIngredient.consume_qty)
+            .join(Category, Category.category_id == Product.category_id)
+            .outerjoin(ProductIngredient,
+                       ProductIngredient.product_id == Product.product_id)
+            .outerjoin(Inventory,
+                       Inventory.ingredient_id == ProductIngredient.ingredient_id)
+            .order_by(Category.sort_order, Product.product_id).all())
+
+        by_product = {}
+        for pid, pname, img, price, cat, ing, unit, qty, alert, consume in rows:
+            if pid not in by_product:
+                by_product[pid] = {"name": pname, "img": img, "price": price,
+                                   "cat": cat, "ings": []}
+            if ing:
+                by_product[pid]["ings"].append({
+                    "ing": ing, "unit": unit,
+                    "consume": consume, "stock": qty, "low": qty <= alert
+                })
+
+        # 视角2: 按原料分组（inventory ⋈ product_ingredient ⋈ products ⋈ categories）
+        rows2 = (db.session.query(
+                Inventory.ingredient_id, Inventory.name, Inventory.unit,
+                Inventory.quantity, Inventory.alert_threshold,
+                Product.name.label("pname"), Category.name.label("cat"),
+                ProductIngredient.consume_qty)
+            .outerjoin(ProductIngredient,
+                       ProductIngredient.ingredient_id == Inventory.ingredient_id)
+            .outerjoin(Product, Product.product_id == ProductIngredient.product_id)
+            .outerjoin(Category, Category.category_id == Product.category_id)
+            .order_by(Inventory.name, Product.product_id).all())
+
+        by_ing = {}
+        for iid, iname, unit, qty, alert, pname, cat, consume in rows2:
+            if iid not in by_ing:
+                by_ing[iid] = {"name": iname, "unit": unit, "stock": qty,
+                               "low": qty <= alert, "products": []}
+            if pname:
+                by_ing[iid]["products"].append({
+                    "name": pname, "cat": cat, "consume": consume
+                })
+
+        return render_template("recipes.html",
+                               by_product=by_product.values(),
+                               by_ing=by_ing.values())
+
     # ---- 数据分析（多表联查报表）----
     @app.route("/analytics")
     @login_required

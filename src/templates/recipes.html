@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}配方管理{% endblock %}
+{% block body %}
+<div class="section-title">
+  <h2>配方管理 · 商品 ↔ 原料关系</h2>
+  <div>
+    <button class="btn small secondary" onclick="showTab('by-product')" id="tab1">按商品看</button>
+    <button class="btn small secondary" onclick="showTab('by-ing')" id="tab2">按原料看</button>
+  </div>
+</div>
+<p style="color:#8b7569;margin-top:-6px;">
+  本页展示 <code>product_ingredient</code> 多对多关联表中的全部数据，下单时系统会按此表自动扣减原料库存。
+</p>
+
+<!-- 视角1: 按商品分组 -->
+<div id="by-product">
+  <div class="recipe-grid">
+    {% for p in by_product %}
+    <div class="recipe-card">
+      <div class="recipe-head">
+        {% if p.img %}
+          <img src="{{ url_for('static', filename=p.img) }}" class="recipe-img">
+        {% else %}
+          <div class="recipe-img placeholder">☕</div>
+        {% endif %}
+        <div>
+          <div class="recipe-name">{{ p.name }}</div>
+          <div style="font-size:12px;color:#8b7569;">{{ p.cat }} · ¥{{ '%.2f' % p.price }}</div>
+        </div>
+      </div>
+      <table class="recipe-table">
+        <tr><th>原料</th><th>每杯消耗</th><th>当前库存</th></tr>
+        {% for it in p.ings %}
+        <tr>
+          <td>{{ it.ing }}</td>
+          <td>{{ it.consume }} {{ it.unit }}</td>
+          <td>
+            {% if it.low %}
+              <span class="tag CANCELLED">{{ it.stock }} {{ it.unit }}</span>
+            {% else %}
+              {{ it.stock }} {{ it.unit }}
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" style="text-align:center;color:#c0a99a;">未配置配方</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- 视角2: 按原料分组 -->
+<div id="by-ing" style="display:none;">
+  <div class="recipe-grid">
+    {% for i in by_ing %}
+    <div class="recipe-card">
+      <div class="recipe-head">
+        <div class="recipe-img placeholder" style="background:#f1eae2;font-size:32px;">📦</div>
+        <div>
+          <div class="recipe-name">{{ i.name }}</div>
+          <div style="font-size:12px;color:#8b7569;">
+            当前库存：
+            {% if i.low %}
+              <span class="tag CANCELLED">{{ i.stock }} {{ i.unit }}（不足）</span>
+            {% else %}
+              {{ i.stock }} {{ i.unit }}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <table class="recipe-table">
+        <tr><th>用于商品</th><th>分类</th><th>单杯消耗</th></tr>
+        {% for p in i.products %}
+        <tr>
+          <td>{{ p.name }}</td>
+          <td><span class="tag">{{ p.cat }}</span></td>
+          <td>{{ p.consume }} {{ i.unit }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" style="text-align:center;color:#c0a99a;">暂未用于任何商品</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<style>
+.recipe-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(320px,1fr)); gap: 18px; }
+.recipe-card { background:#fff; border-radius:10px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+.recipe-head { display:flex; gap:12px; align-items:center; margin-bottom:12px; }
+.recipe-img  { width:60px; height:60px; border-radius:8px; object-fit:cover; }
+.recipe-img.placeholder { display:flex; align-items:center; justify-content:center;
+                          font-size:32px; background:#f7eee4; color:#c9b89a; }
+.recipe-name { font-size:16px; font-weight:600; color:#3e2723; }
+.recipe-table { font-size:13px; box-shadow:none; }
+.recipe-table th, .recipe-table td { padding:6px 8px; }
+</style>
+
+<script>
+function showTab(id) {
+  document.getElementById('by-product').style.display = (id==='by-product') ? '' : 'none';
+  document.getElementById('by-ing').style.display     = (id==='by-ing')     ? '' : 'none';
+  document.getElementById('tab1').className = 'btn small ' + (id==='by-product' ? '' : 'secondary');
+  document.getElementById('tab2').className = 'btn small ' + (id==='by-ing'     ? '' : 'secondary');
+}
+showTab('by-product');
+</script>
+{% endblock %}
