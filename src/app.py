@@ -429,9 +429,12 @@ def _register_routes(app: Flask) -> None:
             flash(msg, "ok")
             return redirect(url_for("order_detail", oid=order.order_id))
 
+        # 给前端 JS 用：等级 -> 折扣率
+        md_map = {m.level: float(m.discount) for m in MemberDiscount.query.all()}
         return render_template("order_new.html",
                                products=Product.query.filter_by(available=True).all(),
-                               customers=Customer.query.all())
+                               customers=Customer.query.all(),
+                               md_map=md_map)
 
     @app.route("/orders/<int:oid>")
     @login_required

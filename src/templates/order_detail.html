@@ -1,17 +1,77 @@
 {% extends "base.html" %}
 {% set st_zh = {'PENDING':'待付款','PAID':'已付款','PREPARING':'制作中','READY':'待取','COMPLETED':'已完成','CANCELLED':'已取消'} %}
+{% set lvl_zh = {'BRONZE':'青铜','SILVER':'白银','GOLD':'黄金','PLATINUM':'铂金'} %}
 {% block title %}订单 #{{ order.order_id }}{% endblock %}
 {% block body %}
+{# 计算原价（未打折前） #}
+{% set ns = namespace(sub=0) %}
+{% for it in order.items %}{% set ns.sub = ns.sub + it.unit_price * it.quantity %}{% endfor %}
+{% set subtotal = ns.sub %}
+{% set discount = subtotal - order.total_amount %}
+
 <div class="section-title"><h2>订单 #{{ order.order_id }}
   <span class="tag {{ order.status }}">{{ st_zh.get(order.status, order.status) }}</span></h2>
   <a class="btn secondary" href="{{ url_for('orders') }}">返回</a>
 </div>
 <div class="cards">
   <div class="card"><h3>下单时间</h3>{{ order.order_time.strftime('%Y-%m-%d %H:%M') }}</div>
-  <div class="card"><h3>会员</h3>{{ order.customer.name if order.customer else '散客' }}</div>
+  <div class="card"><h3>会员</h3>
+    {% if order.customer %}
+      {{ order.customer.name }}
+      <span class="tag lvl-tag-{{ order.customer.member_level }}"
+            style="margin-left:6px;">{{ lvl_zh.get(order.customer.member_level, order.customer.member_level) }}</span>
+    {% else %}
+      散客
+    {% endif %}
+  </div>
   <div class="card"><h3>店员</h3>{{ order.staff.name }}</div>
-  <div class="card"><h3>金额</h3><div class="num">¥{{ '%.2f' % order.total_amount }}</div></div>
+  <div class="card" style="background:linear-gradient(135deg,#6f4e37,#a06641);color:#fff;">
+    <h3 style="color:rgba(255,255,255,.85);">实付金额</h3>
+    <div class="num" style="color:#fff;">¥{{ '%.2f' % order.total_amount }}</div>
+    {% if discount > 0 %}
+    <div style="font-size:12px;margin-top:4px;color:#f6d365;">已优惠 ¥{{ '%.2f' % discount }}</div>
+    {% endif %}
+  </div>
 </div>
+
+{# 金额明细 #}
+<div style="background:#fff;border-radius:10px;padding:18px 22px;margin-top:14px;
+            box-shadow:0 1px 3px rgba(0,0,0,.06);">
+  <h3 style="margin:0 0 10px;color:#3e2723;">💰 金额明细</h3>
+  <div class="amt-line"><span>商品原价（{{ order.items|length }} 件）</span>
+    <span>¥{{ '%.2f' % subtotal }}</span></div>
+  {% if discount > 0 %}
+    {% if order.customer and order.customer.member_level != 'BRONZE' %}
+    <div class="amt-line" style="color:#b04835;">
+      <span>会员折扣（{{ lvl_zh[order.customer.member_level] }}）</span>
+      <span>- ¥{{ '%.2f' % discount }}</span>
+    </div>
+    {% else %}
+    <div class="amt-line" style="color:#b04835;">
+      <span>优惠</span>
+      <span>- ¥{{ '%.2f' % discount }}</span>
+    </div>
+    {% endif %}
+  {% endif %}
+  <div class="amt-line total-line">
+    <span>实付金额</span>
+    <span>¥{{ '%.2f' % order.total_amount }}</span>
+  </div>
+  <div style="font-size:12px;color:#8b7569;margin-top:6px;">
+    支付方式：{{ {'WECHAT':'微信','ALIPAY':'支付宝','CARD':'银行卡','CASH':'现金'}.get(order.payment_method, order.payment_method) }}
+    · {{ '堂食' if order.dine_in else '外带' }}
+  </div>
+</div>
+
+<style>
+.amt-line { display:flex; justify-content:space-between; padding:6px 0; font-size:14px; color:#5b4636; }
+.total-line { border-top:2px dashed #d7a86e; margin-top:6px; padding-top:10px;
+              font-size:18px; font-weight:700; color:#3e2723; }
+.lvl-tag-BRONZE   { background:#f3e2d2; color:#a87547; }
+.lvl-tag-SILVER   { background:#e1e6ec; color:#4a5764; }
+.lvl-tag-GOLD     { background:#fbedc2; color:#8a6500; }
+.lvl-tag-PLATINUM { background:#d5dde3; color:#2c3e50; font-weight:600; }
+</style>
 
 <h3 style="margin-top:24px;">商品明细</h3>
 <table>

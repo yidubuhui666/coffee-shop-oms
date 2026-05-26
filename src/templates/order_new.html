@@ -2,15 +2,17 @@
 {% block title %}新建订单{% endblock %}
 {% block body %}
 <div class="section-title"><h2>新建订单</h2></div>
-<form method="post" style="background:#fff;padding:24px;border-radius:10px;">
+<form method="post" id="orderForm" style="background:#fff;padding:24px;border-radius:10px;">
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
     <div>
       <label>会员（可选）</label>
-      <select name="customer_id">
+      <select name="customer_id" id="customerSel" onchange="calc()">
         <option value="">散客</option>
         {% set lvl = {'BRONZE':'青铜','SILVER':'白银','GOLD':'黄金','PLATINUM':'铂金'} %}
         {% for c in customers %}
-        <option value="{{ c.customer_id }}">{{ c.name }}（{{ lvl[c.member_level] }}）</option>
+        <option value="{{ c.customer_id }}" data-level="{{ c.member_level }}">
+          {{ c.name }}（{{ lvl[c.member_level] }}）
+        </option>
         {% endfor %}
       </select>
     </div>
@@ -26,7 +28,7 @@
   </div>
   <label><input type="checkbox" name="dine_in" checked> 堂食</label>
   <label>优惠码（可选）</label>
-  <input type="text" name="promo_code" placeholder="如 SUMMER20">
+  <input type="text" name="promo_code" placeholder="如 SUMMER20" oninput="calc()">
   <label>备注</label>
   <input type="text" name="remark" placeholder="少糖、多冰…">
 
@@ -36,42 +38,107 @@
   </div>
   <div id="rows">
     <div class="cart-row">
-      <select name="product_id[]">
+      <select name="product_id[]" onchange="calc()">
         <option value="">-- 请选择 --</option>
         {% for p in products %}
-        <option value="{{ p.product_id }}">{{ p.name }} — ¥{{ '%.2f' % p.price }}</option>
+        <option value="{{ p.product_id }}" data-price="{{ p.price }}">
+          {{ p.name }} — ¥{{ '%.2f' % p.price }}
+        </option>
         {% endfor %}
       </select>
-      <input type="number" name="quantity[]" min="1" value="1">
+      <input type="number" name="quantity[]" min="1" value="1" oninput="calc()">
       <select name="size[]"><option>S</option><option selected>M</option><option>L</option></select>
       <span></span>
     </div>
   </div>
   <button type="button" class="btn secondary small" onclick="addRow()">+ 增加一行</button>
 
-  <div style="margin-top:24px;">
+  <!-- 实时合计 -->
+  <div id="totalBox" class="total-box">
+    <div class="total-line"><span>原价合计</span><span id="subtotal">¥0.00</span></div>
+    <div class="total-line discount-line" id="discountLine" style="display:none;">
+      <span id="discountLabel">会员折扣</span><span id="discountAmt">- ¥0.00</span>
+    </div>
+    <div class="total-line final-line">
+      <span>实付金额</span><span id="finalAmt">¥0.00</span>
+    </div>
+  </div>
+
+  <div style="margin-top:18px;">
     <button class="btn" type="submit">提交订单</button>
     <a class="btn secondary" href="{{ url_for('orders') }}">取消</a>
   </div>
 </form>
 
+<style>
+.total-box {
+  margin-top:18px; padding:16px 20px; background:linear-gradient(135deg,#f7eee4,#f1eae2);
+  border-radius:10px; border-left:4px solid #6f4e37;
+}
+.total-line { display:flex; justify-content:space-between; padding:4px 0; font-size:14px; color:#5b4636; }
+.total-line.discount-line { color:#b04835; }
+.total-line.final-line { border-top:2px dashed #d7a86e; margin-top:6px; padding-top:10px;
+                          font-size:20px; font-weight:700; color:#3e2723; }
+</style>
+
 <template id="row-tpl">
   <div class="cart-row">
-    <select name="product_id[]">
+    <select name="product_id[]" onchange="calc()">
       <option value="">-- 请选择 --</option>
       {% for p in products %}
-      <option value="{{ p.product_id }}">{{ p.name }} — ¥{{ '%.2f' % p.price }}</option>
+      <option value="{{ p.product_id }}" data-price="{{ p.price }}">
+        {{ p.name }} — ¥{{ '%.2f' % p.price }}
+      </option>
       {% endfor %}
     </select>
-    <input type="number" name="quantity[]" min="1" value="1">
+    <input type="number" name="quantity[]" min="1" value="1" oninput="calc()">
     <select name="size[]"><option>S</option><option selected>M</option><option>L</option></select>
-    <button type="button" class="btn danger small" onclick="this.parentNode.remove()">×</button>
+    <button type="button" class="btn danger small" onclick="this.parentNode.remove();calc();">×</button>
   </div>
 </template>
 <script>
+const MD_MAP = {{ md_map|tojson }};
+const LVL_ZH = {BRONZE:'青铜',SILVER:'白银',GOLD:'黄金',PLATINUM:'铂金'};
+
 function addRow() {
   const tpl = document.getElementById('row-tpl').content.cloneNode(true);
   document.getElementById('rows').appendChild(tpl);
+  calc();
 }
+
+function calc() {
+  let subtotal = 0;
+  document.querySelectorAll('#rows .cart-row').forEach(row => {
+    const sel = row.querySelector('select[name="product_id[]"]');
+    const qty = parseInt(row.querySelector('input[name="quantity[]"]').value) || 0;
+    const opt = sel.options[sel.selectedIndex];
+    const price = parseFloat(opt?.dataset.price || 0);
+    if (price && qty > 0) subtotal += price * qty;
+  });
+
+  // 会员折扣
+  const custSel = document.getElementById('customerSel');
+  const level = custSel.options[custSel.selectedIndex]?.dataset.level;
+  let rate = 1.0, label = '会员折扣';
+  if (level && MD_MAP[level]) {
+    rate = MD_MAP[level];
+    label = `会员折扣（${LVL_ZH[level]} ${Math.round(rate*100)}折）`;
+  }
+
+  const finalAmt = subtotal * rate;
+  const discount = subtotal - finalAmt;
+
+  document.getElementById('subtotal').textContent = '¥' + subtotal.toFixed(2);
+  document.getElementById('finalAmt').textContent = '¥' + finalAmt.toFixed(2);
+  const dl = document.getElementById('discountLine');
+  if (discount > 0.001) {
+    dl.style.display = '';
+    document.getElementById('discountLabel').textContent = label;
+    document.getElementById('discountAmt').textContent = '- ¥' + discount.toFixed(2);
+  } else {
+    dl.style.display = 'none';
+  }
+}
+calc();
 </script>
 {% endblock %}
