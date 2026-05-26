@@ -603,14 +603,76 @@ def _register_routes(app: Flask) -> None:
         if request.method == "POST":
             iid = int(request.form["ingredient_id"])
             item = Inventory.query.get_or_404(iid)
-            item.quantity = Decimal(request.form["quantity"])
+            # 入库（加量）/ 直接覆盖
+            mode = request.form.get("mode", "set")
+            new_qty = Decimal(request.form["quantity"])
+            if mode == "add":
+                item.quantity = Decimal(str(item.quantity)) + new_qty
+            else:
+                item.quantity = new_qty
             if request.form.get("alert_threshold"):
                 item.alert_threshold = Decimal(request.form["alert_threshold"])
             db.session.commit()
-            flash("库存已更新。", "ok")
-            return redirect(url_for("inventory"))
+            flash(f"原料「{item.name}」已更新（当前 {item.quantity} {item.unit}）。", "ok")
+            return redirect(url_for("inventory", selected=iid))
+
+        all_items = Inventory.query.order_by(Inventory.name).all()
+
+        # 按名字关键字归类（不动数据库结构）
+        def cat_of(name):
+            n = name
+            if any(k in n for k in ["咖啡豆"]): return ("coffee",  "☕ 咖啡豆", 1)
+            if any(k in n for k in ["牛奶","奶油","奶酪","黄油","奶"]): return ("dairy",   "🥛 乳制品", 2)
+            if any(k in n for k in ["糖","糖浆","蜂蜜"]): return ("sugar",   "🍯 糖与糖浆", 3)
+            if any(k in n for k in ["巧克力","可可","抹茶","肉桂","香草精"]): return ("flavor",  "🌿 风味配料", 4)
+            if any(k in n for k in ["茶","柠檬","薄荷"]): return ("tea",     "🍵 茶饮原料", 5)
+            if any(k in n for k in ["面粉","鸡蛋","饼干"]): return ("bakery",  "🍰 烘焙原料", 6)
+            return ("pack", "📦 包装耗材", 7)
+
+        groups = {}
+        for it in all_items:
+            key, label, order = cat_of(it.name)
+            groups.setdefault((order, key, label), []).append(it)
+        groups = [(label, key, items_) for (order, key, label), items_ in sorted(groups.items())]
+
+        # 选中项
+        selected_id = request.args.get("selected", type=int)
+        selected = None
+        if selected_id:
+            selected = db.session.get(Inventory, selected_id)
+        if not selected and all_items:
+            selected = all_items[0]
+
+        # 选中项的相关统计
+        info = {}
+        if selected:
+            # 用于多少种商品
+            used_in = (db.session.query(Product.name, ProductIngredient.consume_qty)
+                       .join(ProductIngredient,
+                             ProductIngredient.product_id == Product.product_id)
+                       .filter(ProductIngredient.ingredient_id == selected.ingredient_id)
+                       .all())
+            info["used_in"] = used_in
+
+            # 近 7 天通过订单消耗了多少
+            week_ago = datetime.now() - timedelta(days=7)
+            consumed = (db.session.query(
+                func.sum(OrderItem.quantity * ProductIngredient.consume_qty))
+                .join(ProductIngredient,
+                      ProductIngredient.product_id == OrderItem.product_id)
+                .join(Order, Order.order_id == OrderItem.order_id)
+                .filter(ProductIngredient.ingredient_id == selected.ingredient_id)
+                .filter(Order.order_time >= week_ago)
+                .filter(Order.status != "CANCELLED").scalar()) or 0
+            info["consumed_7d"] = float(consumed)
+            # 预估剩余天数
+            avg_per_day = float(consumed) / 7 if consumed else 0
+            info["days_left"] = round(float(selected.quantity) / avg_per_day, 1) if avg_per_day > 0 else None
+
         return render_template("inventory.html",
-                               items=Inventory.query.order_by(Inventory.name).all())
+                               groups=groups,
+                               selected=selected,
+                               info=info)
 
     @app.route("/inventory/new", methods=["GET", "POST"])
     @login_required
