@@ -3,16 +3,38 @@
 {% block body %}
 {% set st_zh = {'PENDING':'待付款','PAID':'已付款','PREPARING':'制作中','READY':'待取','COMPLETED':'已完成','CANCELLED':'已取消'} %}
 {% set pay_zh = {'WECHAT':'微信','ALIPAY':'支付宝','CARD':'银行卡','CASH':'现金'} %}
+
 <div class="section-title">
   <h2>订单列表</h2>
-  <div>
-    <a class="btn small secondary" href="{{ url_for('orders') }}">全部</a>
-    {% for s in ['PENDING','PAID','PREPARING','READY','COMPLETED','CANCELLED'] %}
-    <a class="btn small secondary" href="{{ url_for('orders', status=s) }}">{{ st_zh[s] }}</a>
-    {% endfor %}
-    <a class="btn" href="{{ url_for('order_new') }}">+ 新建订单</a>
-  </div>
+  <a class="btn" href="{{ url_for('order_new') }}">+ 新建订单</a>
 </div>
+
+<!-- 时间维度 tab -->
+<div class="tabbar">
+  <a class="tab {{ 'on' if when=='today' }}"
+     href="{{ url_for('orders', when='today', status=cur_status) }}">
+    今日订单 <span class="tab-num">{{ cnt_today }}</span>
+  </a>
+  <a class="tab {{ 'on' if when=='history' }}"
+     href="{{ url_for('orders', when='history', status=cur_status) }}">
+    历史订单 <span class="tab-num">{{ cnt_history }}</span>
+  </a>
+  <a class="tab {{ 'on' if when=='all' }}"
+     href="{{ url_for('orders', when='all', status=cur_status) }}">
+    全部订单 <span class="tab-num">{{ cnt_all }}</span>
+  </a>
+</div>
+
+<!-- 状态筛选 -->
+<div style="margin:14px 0 16px;">
+  <a class="btn small {{ '' if cur_status else 'secondary' }}"
+     href="{{ url_for('orders', when=when) }}">全部状态</a>
+  {% for s in ['PENDING','PAID','PREPARING','READY','COMPLETED','CANCELLED'] %}
+  <a class="btn small {{ '' if cur_status==s else 'secondary' }}"
+     href="{{ url_for('orders', when=when, status=s) }}">{{ st_zh[s] }}</a>
+  {% endfor %}
+</div>
+
 <table>
   <tr><th>编号</th><th>时间</th><th>会员</th><th>店员</th><th>件数</th>
       <th>金额</th><th>支付</th><th>状态</th><th></th></tr>
@@ -29,7 +51,18 @@
     <td><a class="btn small" href="{{ url_for('order_detail', oid=o.order_id) }}">查看</a></td>
   </tr>
   {% else %}
-  <tr><td colspan="9" style="text-align:center;color:#8b7569;">暂无订单。</td></tr>
+  <tr><td colspan="9" style="text-align:center;color:#8b7569;padding:30px;">该筛选条件下暂无订单。</td></tr>
   {% endfor %}
 </table>
+
+<style>
+.tabbar { display:flex; gap:4px; border-bottom:2px solid #d7a86e; margin-top:10px; }
+.tab    { padding:10px 22px; color:#5b4636; font-size:14px; border-radius:8px 8px 0 0;
+          background:#efe7df; }
+.tab:hover  { text-decoration:none; background:#e5d9c8; }
+.tab.on     { background:#6f4e37; color:#fff !important; font-weight:600; }
+.tab.on .tab-num { background:#d7a86e; color:#3e2723; }
+.tab-num    { display:inline-block; min-width:20px; padding:1px 6px; margin-left:6px;
+              border-radius:10px; font-size:12px; background:#d7a86e; color:#3e2723; text-align:center; }
+</style>
 {% endblock %}

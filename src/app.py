@@ -270,10 +270,29 @@ def _register_routes(app: Flask) -> None:
     def orders():
         q = Order.query.order_by(Order.order_time.desc())
         status = request.args.get("status")
+        when = request.args.get("when", "today")  # today / history / all
+
+        today = date.today()
+        if when == "today":
+            q = q.filter(func.date(Order.order_time) == today)
+        elif when == "history":
+            q = q.filter(func.date(Order.order_time) < today)
+
         if status:
             q = q.filter_by(status=status)
-        return render_template("orders.html", orders=q.limit(200).all(),
-                               cur_status=status)
+
+        # 统计 3 个 tab 各自的数量（带 status 过滤一起算）
+        base = Order.query
+        if status:
+            base = base.filter_by(status=status)
+        cnt_today   = base.filter(func.date(Order.order_time) == today).count()
+        cnt_history = base.filter(func.date(Order.order_time) <  today).count()
+        cnt_all     = base.count()
+
+        return render_template("orders.html", orders=q.limit(300).all(),
+                               cur_status=status, when=when,
+                               cnt_today=cnt_today, cnt_history=cnt_history,
+                               cnt_all=cnt_all)
 
     @app.route("/orders/new", methods=["GET", "POST"])
     @login_required
@@ -384,13 +403,23 @@ def _register_routes(app: Flask) -> None:
     @login_required
     def customers():
         kw = request.args.get("q", "").strip()
+        level = request.args.get("level", "")  # "" / BRONZE / SILVER / GOLD / PLATINUM
         q = Customer.query
+        if level:
+            q = q.filter_by(member_level=level)
         if kw:
             like = f"%{kw}%"
             q = q.filter((Customer.name.like(like)) | (Customer.phone.like(like)))
+
+        # 各等级人数
+        counts = dict(db.session.query(Customer.member_level,
+                                       func.count(Customer.customer_id))
+                                .group_by(Customer.member_level).all())
+        counts["ALL"] = Customer.query.count()
+
         return render_template("customers.html",
                                customers=q.order_by(Customer.customer_id.desc()).all(),
-                               kw=kw)
+                               kw=kw, level=level, counts=counts)
 
     @app.route("/customers/new", methods=["GET", "POST"])
     @login_required

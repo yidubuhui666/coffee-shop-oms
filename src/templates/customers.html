@@ -2,10 +2,12 @@
 {% block title %}会员{% endblock %}
 {% block body %}
 {% set lvl = {'BRONZE':'青铜','SILVER':'白银','GOLD':'黄金','PLATINUM':'铂金'} %}
+
 <div class="section-title">
   <h2>会员管理</h2>
   <div>
     <form method="get" style="display:inline-block;">
+      <input type="hidden" name="level" value="{{ level }}">
       <input type="text" name="q" value="{{ kw }}" placeholder="搜索姓名或手机号"
              style="width:220px;display:inline-block;">
       <button class="btn small" type="submit">搜索</button>
@@ -13,20 +15,55 @@
     <a class="btn" href="{{ url_for('customer_new') }}">+ 新增会员</a>
   </div>
 </div>
-<table>
-  <tr><th>编号</th><th>姓名</th><th>手机号</th><th>邮箱</th><th>等级</th><th>积分</th><th>注册时间</th></tr>
+
+<!-- 会员等级 tab -->
+<div class="tabbar">
+  <a class="tab {{ 'on' if not level }}" href="{{ url_for('customers') }}">
+    全部 <span class="tab-num">{{ counts.get('ALL', 0) }}</span>
+  </a>
+  {% for code in ['BRONZE','SILVER','GOLD','PLATINUM'] %}
+  <a class="tab lvl-{{ code }} {{ 'on' if level==code }}"
+     href="{{ url_for('customers', level=code) }}">
+    {{ lvl[code] }} <span class="tab-num">{{ counts.get(code, 0) }}</span>
+  </a>
+  {% endfor %}
+</div>
+
+<table style="margin-top:14px;">
+  <tr><th>编号</th><th>姓名</th><th>手机号</th><th>邮箱</th><th>等级</th>
+      <th>积分</th><th>注册时间</th></tr>
   {% for c in customers %}
   <tr>
     <td>{{ c.customer_id }}</td>
     <td>{{ c.name }}</td>
     <td>{{ c.phone or '-' }}</td>
     <td>{{ c.email or '-' }}</td>
-    <td><span class="tag">{{ lvl.get(c.member_level, c.member_level) }}</span></td>
+    <td><span class="tag lvl-tag-{{ c.member_level }}">{{ lvl.get(c.member_level, c.member_level) }}</span></td>
     <td>{{ c.points }}</td>
     <td>{{ c.registered_at.strftime('%Y-%m-%d') if c.registered_at }}</td>
   </tr>
   {% else %}
-  <tr><td colspan="7" style="text-align:center;color:#8b7569;">暂无会员。</td></tr>
+  <tr><td colspan="7" style="text-align:center;color:#8b7569;padding:30px;">该等级下暂无会员。</td></tr>
   {% endfor %}
 </table>
+
+<style>
+.tabbar { display:flex; gap:4px; border-bottom:2px solid #d7a86e; margin-top:10px; }
+.tab    { padding:10px 22px; color:#5b4636; font-size:14px; border-radius:8px 8px 0 0;
+          background:#efe7df; }
+.tab:hover { text-decoration:none; background:#e5d9c8; }
+.tab.on    { color:#fff !important; font-weight:600; }
+.tab.on              { background:#6f4e37; }
+.tab.lvl-BRONZE.on   { background:#a87547; }
+.tab.lvl-SILVER.on   { background:#7a8a99; }
+.tab.lvl-GOLD.on     { background:#c79a3b; }
+.tab.lvl-PLATINUM.on { background:#2c3e50; }
+.tab.on .tab-num { background:#d7a86e; color:#3e2723; }
+.tab-num { display:inline-block; min-width:20px; padding:1px 6px; margin-left:6px;
+           border-radius:10px; font-size:12px; background:#d7a86e; color:#3e2723; text-align:center; }
+.lvl-tag-BRONZE   { background:#f3e2d2; color:#a87547; }
+.lvl-tag-SILVER   { background:#e1e6ec; color:#4a5764; }
+.lvl-tag-GOLD     { background:#fbedc2; color:#8a6500; }
+.lvl-tag-PLATINUM { background:#d5dde3; color:#2c3e50; font-weight:600; }
+</style>
 {% endblock %}
