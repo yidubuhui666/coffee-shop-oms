@@ -25,6 +25,26 @@ def create_app() -> Flask:
 
     _register_routes(app)
 
+    # 根据商品名智能选择 emoji（用于没有图片时的占位符）
+    def _prod_emoji(name):
+        if not name: return "☕"
+        kw = [
+            (["气泡", "苏打", "汽水"], "🥤"),
+            (["套餐", "组合"], "🍱"),
+            (["茶"], "🍵"),
+            (["冷萃", "冰"], "🧊"),
+            (["蛋糕", "提拉", "布朗尼", "司康", "玛德琳", "芝士", "甜品"], "🍰"),
+            (["柠檬"], "🍋"),
+        ]
+        for words, emoji in kw:
+            if any(w in name for w in words):
+                return emoji
+        return "☕"
+
+    @app.context_processor
+    def inject_helpers():
+        return {"prod_emoji": _prod_emoji}
+
     # 把活跃员工列表注入到所有模板（供右上角"切换账号"下拉用）
     @app.context_processor
     def inject_switchable_staff():

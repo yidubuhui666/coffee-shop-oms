@@ -101,7 +101,7 @@
       {% if img %}
         <img src="{{ url_for('static', filename='img/products/' + img) }}" class="top-img">
       {% else %}
-        <div class="top-img placeholder">☕</div>
+        <div class="top-img placeholder">{{ prod_emoji(name) }}</div>
       {% endif %}
       <div style="flex:1;min-width:0;">
         <div style="font-weight:600;color:#3e2723;">{{ name }}</div>

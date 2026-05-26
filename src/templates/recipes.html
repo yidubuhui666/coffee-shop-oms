@@ -21,7 +21,7 @@
         {% if p.img %}
           <img src="{{ url_for('static', filename='img/products/' + p.img) }}" class="recipe-img">
         {% else %}
-          <div class="recipe-img placeholder">☕</div>
+          <div class="recipe-img placeholder">{{ prod_emoji(p.name) }}</div>
         {% endif %}
         <div>
           <div class="recipe-name">{{ p.name }}</div>
@@ -78,7 +78,7 @@
             {% if p.img %}
               <img src="{{ url_for('static', filename='img/products/' + p.img) }}" class="ing-thumb">
             {% else %}
-              <span class="ing-thumb placeholder">☕</span>
+              <span class="ing-thumb placeholder">{{ prod_emoji(p.name) }}</span>
             {% endif %}
             {{ p.name }}
           </td>
