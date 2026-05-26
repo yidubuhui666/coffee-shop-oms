@@ -517,23 +517,11 @@ def _register_routes(app: Flask) -> None:
         return render_template("inventory.html",
                                items=Inventory.query.order_by(Inventory.name).all())
 
-    # ---- Stats ----
+    # 旧 /stats 重定向到合并后的 /analytics
     @app.route("/stats")
     @login_required
     def stats():
-        rev = (db.session.query(func.date(Order.order_time),
-                                func.count(Order.order_id),
-                                func.sum(Order.total_amount))
-               .filter(Order.status != "CANCELLED")
-               .group_by(func.date(Order.order_time))
-               .order_by(func.date(Order.order_time).desc()).limit(14).all())
-        prod = (db.session.query(Product.name,
-                                 func.sum(OrderItem.quantity),
-                                 func.sum(OrderItem.quantity * OrderItem.unit_price))
-                .join(OrderItem, OrderItem.product_id == Product.product_id)
-                .group_by(Product.product_id)
-                .order_by(func.sum(OrderItem.quantity).desc()).all())
-        return render_template("stats.html", daily=rev, products=prod)
+        return redirect(url_for("analytics"))
 
     # ---- JSON API (lookup) ----
     @app.route("/api/product/<int:pid>")
@@ -598,10 +586,26 @@ def _register_routes(app: Flask) -> None:
                                by_product=by_product.values(),
                                by_ing=by_ing.values())
 
-    # ---- 数据分析（多表联查报表）----
+    # ---- 数据分析（综合：基础统计 + 多表联查报表）----
     @app.route("/analytics")
     @login_required
     def analytics():
+        # 基础统计 A: 近 14 天营收
+        daily = (db.session.query(func.date(Order.order_time),
+                                  func.count(Order.order_id),
+                                  func.sum(Order.total_amount))
+                 .filter(Order.status != "CANCELLED")
+                 .group_by(func.date(Order.order_time))
+                 .order_by(func.date(Order.order_time).desc()).limit(14).all())
+
+        # 基础统计 B: 商品销量排行
+        prod_rank = (db.session.query(Product.name,
+                                      func.sum(OrderItem.quantity),
+                                      func.sum(OrderItem.quantity * OrderItem.unit_price))
+                     .join(OrderItem, OrderItem.product_id == Product.product_id)
+                     .group_by(Product.product_id)
+                     .order_by(func.sum(OrderItem.quantity).desc()).all())
+
         # 1. 会员消费 TOP10（customers + orders + order_items 三表 JOIN）
         top_customers = (db.session.query(
                 Customer.name, Customer.member_level,
@@ -704,6 +708,8 @@ def _register_routes(app: Flask) -> None:
             .order_by(MemberDiscount.discount).all())
 
         return render_template("analytics.html",
+                               daily=daily,
+                               prod_rank=prod_rank,
                                top_customers=top_customers,
                                top_staff=top_staff,
                                cat_sales=cat_sales,

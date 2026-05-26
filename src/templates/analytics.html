@@ -2,10 +2,48 @@
 {% block title %}数据分析{% endblock %}
 {% block body %}
 {% set role_zh = {'ADMIN':'管理员','BARISTA':'咖啡师','CASHIER':'收银员'} %}
-<div class="section-title"><h2>数据分析（多表联查报表）</h2></div>
-<p style="color:#8b7569;margin-top:-6px;">
-  本页 8 张报表均由 3~5 张表 JOIN 聚合得到，演示了 customers / staff / categories / products /
-  order_items / orders / inventory / product_ingredient / member_discount 之间的关联关系。
+<div class="section-title"><h2>数据分析</h2></div>
+
+<!-- 二级标签：基础统计 / 多表联查 -->
+<div class="tabbar">
+  <a class="tab on" href="#" onclick="showSec('basic');return false;" id="t-basic">基础统计</a>
+  <a class="tab"    href="#" onclick="showSec('join');return false;"  id="t-join">多表联查报表</a>
+</div>
+
+<!-- ============= 基础统计 ============= -->
+<div id="sec-basic" style="margin-top:18px;">
+
+  <h3 style="color:#6f4e37;">📈 近 14 天营收</h3>
+  <table>
+    <tr><th>日期</th><th>订单数</th><th>营业额</th><th>趋势</th></tr>
+    {% set max_amt = (daily|map(attribute=2)|select|max) or 1 %}
+    {% for d, c, amt in daily %}
+    <tr>
+      <td>{{ d }}</td>
+      <td>{{ c }}</td>
+      <td>¥{{ '%.2f' % (amt or 0) }}</td>
+      <td><div style="background:#6f4e37;height:14px;width:{{ ((amt or 0)/max_amt*220)|int }}px;border-radius:3px;"></div></td>
+    </tr>
+    {% else %}<tr><td colspan="4" style="text-align:center;color:#8b7569;">暂无数据</td></tr>{% endfor %}
+  </table>
+
+  <h3 style="margin-top:24px;color:#6f4e37;">🏆 商品销量总排行</h3>
+  <table>
+    <tr><th>排名</th><th>商品</th><th>累计销量</th><th>累计营业额</th></tr>
+    {% for name, qty, amt in prod_rank %}
+    <tr><td>{{ loop.index }}</td><td>{{ name }}</td>
+        <td>{{ qty }} 杯/份</td>
+        <td>¥{{ '%.2f' % (amt or 0) }}</td></tr>
+    {% else %}<tr><td colspan="4" style="text-align:center;color:#8b7569;">暂无数据</td></tr>{% endfor %}
+  </table>
+</div>
+
+<!-- ============= 多表联查报表 ============= -->
+<div id="sec-join" style="display:none;margin-top:18px;">
+<p style="color:#8b7569;">
+  以下 8 张报表均由 3~5 张表 JOIN 聚合得到，演示
+  customers / staff / categories / products / order_items / orders /
+  inventory / product_ingredient / member_discount 之间的关联关系。
 </p>
 
 <!-- 1. 会员消费 TOP10 -->
@@ -108,4 +146,21 @@
   {% endfor %}
 </table>
 
+</div><!-- /sec-join -->
+
+<style>
+.tabbar { display:flex; gap:4px; border-bottom:2px solid #d7a86e; margin-top:10px; }
+.tab    { padding:10px 22px; color:#5b4636; font-size:14px; border-radius:8px 8px 0 0;
+          background:#efe7df; cursor:pointer; }
+.tab:hover { text-decoration:none; background:#e5d9c8; }
+.tab.on    { background:#6f4e37; color:#fff !important; font-weight:600; }
+</style>
+<script>
+function showSec(which) {
+  document.getElementById('sec-basic').style.display = (which==='basic') ? '' : 'none';
+  document.getElementById('sec-join').style.display  = (which==='join')  ? '' : 'none';
+  document.getElementById('t-basic').className = 'tab ' + (which==='basic' ? 'on' : '');
+  document.getElementById('t-join').className  = 'tab ' + (which==='join'  ? 'on' : '');
+}
+</script>
 {% endblock %}
