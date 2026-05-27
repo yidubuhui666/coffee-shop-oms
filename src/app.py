@@ -836,7 +836,8 @@ def _register_routes(app: Flask) -> None:
     def recipes():
         # 视角1: 按商品分组（products ⋈ categories ⋈ product_ingredient ⋈ inventory）
         rows = (db.session.query(
-                Product.product_id, Product.name, Product.image, Product.price,
+                Product.product_id, Product.name, Product.description,
+                Product.image, Product.price, Product.stock,
                 Category.name.label("cat"),
                 Inventory.name.label("ing"), Inventory.unit,
                 Inventory.quantity, Inventory.alert_threshold,
@@ -849,9 +850,11 @@ def _register_routes(app: Flask) -> None:
             .order_by(Category.sort_order, Product.product_id).all())
 
         by_product = {}
-        for pid, pname, img, price, cat, ing, unit, qty, alert, consume in rows:
+        for (pid, pname, pdesc, img, price, pstock,
+             cat, ing, unit, qty, alert, consume) in rows:
             if pid not in by_product:
-                by_product[pid] = {"name": pname, "img": img, "price": price,
+                by_product[pid] = {"name": pname, "desc": pdesc, "img": img,
+                                   "price": price, "stock": pstock,
                                    "cat": cat, "ings": []}
             if ing:
                 by_product[pid]["ings"].append({
@@ -960,13 +963,13 @@ def _register_routes(app: Flask) -> None:
 
         # 5. 时段热度（按下单小时聚合，orders + order_items）
         hourly = (db.session.query(
-                func.hour(Order.order_time).label("h"),
+                func.extract("hour", Order.order_time).label("h"),
                 func.count(Order.order_id.distinct()).label("orders"),
                 func.sum(OrderItem.quantity).label("cups"))
             .join(OrderItem, OrderItem.order_id == Order.order_id)
             .filter(Order.status != "CANCELLED")
-            .group_by(func.hour(Order.order_time))
-            .order_by(func.hour(Order.order_time)).all())
+            .group_by(func.extract("hour", Order.order_time))
+            .order_by(func.extract("hour", Order.order_time)).all())
 
         # 6. 原料消耗预测（inventory + product_ingredient + order_items + products 四表 JOIN）
         ing_use = (db.session.query(

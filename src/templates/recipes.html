@@ -23,27 +23,43 @@
         {% else %}
           <div class="recipe-img placeholder">{{ prod_emoji(p.name) }}</div>
         {% endif %}
-        <div>
-          <div class="recipe-name">{{ p.name }}</div>
-          <div style="font-size:12px;color:#8b7569;">{{ p.cat }} · ¥{{ '%.2f' % p.price }}</div>
+        <div style="flex:1;">
+          <div class="recipe-name">{{ p.name }}
+            <span class="tag" style="margin-left:6px;">{{ p.cat }}</span>
+          </div>
+          <div class="recipe-meta">
+            <span class="recipe-price">¥{{ '%.2f' % p.price }}</span>
+            <span class="recipe-stock">商品库存：{{ p.stock }} 杯</span>
+          </div>
         </div>
       </div>
+
+      {% if p.desc %}
+      <p class="recipe-desc">📝 <em>{{ p.desc }}</em></p>
+      {% endif %}
+
+      <div class="recipe-section-title">原料配方
+        <span style="float:right;font-weight:normal;color:#8b7569;font-size:12px;">
+          共 {{ p.ings|length }} 种原料
+        </span>
+      </div>
       <table class="recipe-table">
-        <tr><th>原料</th><th>每杯消耗</th><th>当前库存</th></tr>
+        <tr><th>原料</th><th>每杯消耗</th><th>当前库存</th><th>状态</th></tr>
         {% for it in p.ings %}
         <tr>
-          <td>{{ it.ing }}</td>
+          <td><strong>{{ it.ing }}</strong></td>
           <td>{{ it.consume }} {{ it.unit }}</td>
+          <td>{{ it.stock }} {{ it.unit }}</td>
           <td>
             {% if it.low %}
-              <span class="tag CANCELLED">{{ it.stock }} {{ it.unit }}</span>
+              <span class="tag CANCELLED">库存告急</span>
             {% else %}
-              {{ it.stock }} {{ it.unit }}
+              <span class="tag PAID">正常</span>
             {% endif %}
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="3" style="text-align:center;color:#c0a99a;">未配置配方</td></tr>
+        <tr><td colspan="4" style="text-align:center;color:#c0a99a;">未配置配方</td></tr>
         {% endfor %}
       </table>
     </div>
@@ -102,6 +118,17 @@
 .recipe-img.placeholder { display:flex; align-items:center; justify-content:center;
                           font-size:32px; background:#f7eee4; color:#c9b89a; }
 .recipe-name { font-size:16px; font-weight:600; color:#3e2723; }
+.recipe-meta { font-size:12px; color:#8b7569; margin-top:4px; }
+.recipe-price { color:#b04835; font-weight:600; margin-right:14px; }
+.recipe-stock { color:#5b4636; }
+.recipe-desc {
+  background:#fdf6ee; border-left:3px solid #d7a86e; padding:8px 12px;
+  border-radius:4px; font-size:13px; color:#5b4636; margin:0 0 12px;
+}
+.recipe-section-title {
+  font-size:13px; font-weight:600; color:#5b4636;
+  border-bottom:1px solid #efe7df; padding-bottom:6px; margin-bottom:6px;
+}
 .recipe-table { font-size:13px; box-shadow:none; }
 .recipe-table th, .recipe-table td { padding:6px 8px; }
 .ing-thumb { width:32px; height:32px; border-radius:4px; object-fit:cover; }
