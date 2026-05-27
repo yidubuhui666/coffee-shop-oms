@@ -33,7 +33,8 @@ echo   账号: admin/admin123  或  xuyueqian/xuyq123
 echo   关闭此窗口即停止服务
 echo ========================================
 
-set DATABASE_URL=mysql+pymysql://root:YOUR_MYSQL_PASSWORD@127.0.0.1:3306/coffee_shop?charset=utf8mb4
+REM 加载本地敏感配置（DATABASE_URL 等）。.env.bat 不进 git。
+if exist ".env.bat" call .env.bat
 .\venv\Scripts\python.exe app.py
 
 pause

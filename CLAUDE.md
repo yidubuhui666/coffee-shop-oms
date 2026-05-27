@@ -30,10 +30,8 @@
 
 ## 项目运行环境
 
-- **本地 MySQL**：`root` / `YOUR_MYSQL_PASSWORD` / 数据库 `coffee_shop`
-- **MySQL 可执行文件路径**：`D:\mysql\mysql-8.0.45-winx64\bin\mysql.exe`
-- **项目路径**：`C:\Users\许yq\coffee-shop-oms\`
-- **启动方式**：桌面快捷方式 `启动咖啡店系统.lnk` 或运行 `src/app.py`
+- **数据库**：MySQL，连接信息通过环境变量 `DATABASE_URL` 注入（**不要硬编码到任何被 git 跟踪的文件**）
+- **本地用法**：在 `src/.env.bat`（已 gitignore）里设置 `set DATABASE_URL=...`，由 `启动.bat` 调用
 - **访问地址**：http://127.0.0.1:5050
 - **GitHub 仓库**：https://github.com/yidubuhui666/coffee-shop-oms
 
