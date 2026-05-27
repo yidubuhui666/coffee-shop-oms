@@ -82,10 +82,16 @@ with app.app_context():
     cats = {c.name: c.category_id for c in Category.query.all()}
     inv  = {i.name: i.ingredient_id for i in Inventory.query.all()}
 
-    added, skipped, recipe_added = 0, 0, 0
+    added, skipped, patched, recipe_added = 0, 0, 0, 0
 
     for cat_name, name, desc, price, stock, img, recipe in NEW_PRODUCTS:
-        if Product.query.filter_by(name=name).first():
+        existing = Product.query.filter_by(name=name).first()
+        if existing:
+            # 商品已存在：把缺失或过期的 image 字段补上，保证脚本真正幂等
+            # （历史上由更早版本插入但 image 留空 / 填错）
+            if existing.image != img:
+                existing.image = img
+                patched += 1
             skipped += 1
             continue
         if cat_name not in cats:
@@ -112,6 +118,7 @@ with app.app_context():
         added += 1
 
     db.session.commit()
-    print(f"OK：新增商品 {added} 款，跳过 {skipped} 款已存在，"
+    print(f"OK：新增商品 {added} 款，跳过 {skipped} 款已存在"
+          f"（其中补全 image 字段 {patched} 款），"
           f"新增配方记录 {recipe_added} 条")
     print(f"\n现在菜单共有 {Product.query.count()} 款商品。")
