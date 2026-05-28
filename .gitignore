@@ -30,6 +30,13 @@ instance/
 src/.env.bat
 *.env
 
+# 临时候选图与实验脚本
+_candidate.jpg
+_candidates/
+batch_ai_*.ps1
+scrape_*.ps1
+scrape_*.py
+
 # ==========================================
 #  IDE / 编辑器
 # ==========================================
