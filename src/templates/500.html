@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}服务器开小差了{% endblock %}
+{% block body %}
+<div style="text-align:center;padding:80px 20px;">
+  <div style="font-size:72px;">🫖</div>
+  <h2 style="color:#6f4e37;margin:12px 0;">500 · 服务器开小差了</h2>
+  <p style="color:#8b7569;">出了点意外，请稍后再试。如果反复出现，请联系管理员。</p>
+  <a class="btn" href="{{ url_for('main.dashboard') }}" style="margin-top:18px;display:inline-block;">返回仪表盘</a>
+</div>
+{% endblock %}

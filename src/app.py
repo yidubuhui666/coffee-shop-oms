@@ -3,7 +3,7 @@
 业务路由全部拆分到 routes/ 下的 Blueprint，
 本文件只负责：创建应用、加载配置、初始化数据库、注册蓝图、注入模板上下文。
 """
-from flask import Flask, session
+from flask import Flask, session, render_template
 
 from config import Config
 from models import db, Staff
@@ -40,6 +40,15 @@ def create_app() -> Flask:
             ]}
         except Exception:
             return {"switchable_staff": []}
+
+    @app.errorhandler(404)
+    def not_found(e):
+        return render_template("404.html"), 404
+
+    @app.errorhandler(500)
+    def server_error(e):
+        db.session.rollback()
+        return render_template("500.html"), 500
 
     return app
 

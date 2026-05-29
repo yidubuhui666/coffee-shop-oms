@@ -14,6 +14,7 @@ bp = Blueprint("customers", __name__)
 def customers():
     kw = request.args.get("q", "").strip()
     level = request.args.get("level", "")
+    page = request.args.get("page", 1, type=int)
     q = Customer.query
     if level:
         q = q.filter_by(member_level=level)
@@ -26,8 +27,12 @@ def customers():
                             .group_by(Customer.member_level).all())
     counts["ALL"] = Customer.query.count()
 
+    pagination = (q.order_by(Customer.customer_id.desc())
+                   .paginate(page=page, per_page=20, error_out=False))
+
     return render_template("customers.html",
-                           customers=q.order_by(Customer.customer_id.desc()).all(),
+                           customers=pagination.items,
+                           pagination=pagination,
                            kw=kw, level=level, counts=counts)
 
 

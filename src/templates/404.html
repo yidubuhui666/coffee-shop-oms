@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}页面不存在{% endblock %}
+{% block body %}
+<div style="text-align:center;padding:80px 20px;">
+  <div style="font-size:72px;">☕</div>
+  <h2 style="color:#6f4e37;margin:12px 0;">404 · 页面不存在</h2>
+  <p style="color:#8b7569;">你要找的页面好像被喝光了，换个地址试试。</p>
+  <a class="btn" href="{{ url_for('main.dashboard') }}" style="margin-top:18px;display:inline-block;">返回仪表盘</a>
+</div>
+{% endblock %}

@@ -3,3 +3,6 @@ Flask-SQLAlchemy==3.1.1
 PyMySQL==1.1.1
 cryptography==42.0.5
 Werkzeug==3.0.3
+
+# 可选：运行 tests/ 下的冒烟测试用（pip install pytest）
+# pytest==8.2.0
