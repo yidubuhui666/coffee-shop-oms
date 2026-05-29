@@ -12,18 +12,18 @@
              style="width:220px;display:inline-block;">
       <button class="btn small" type="submit">搜索</button>
     </form>
-    <a class="btn" href="{{ url_for('customer_new') }}">+ 新增会员</a>
+    <a class="btn" href="{{ url_for('customers.customer_new') }}">+ 新增会员</a>
   </div>
 </div>
 
 <!-- 会员等级 tab -->
 <div class="tabbar">
-  <a class="tab {{ 'on' if not level }}" href="{{ url_for('customers') }}">
+  <a class="tab {{ 'on' if not level }}" href="{{ url_for('customers.customers') }}">
     全部 <span class="tab-num">{{ counts.get('ALL', 0) }}</span>
   </a>
   {% for code in ['BRONZE','SILVER','GOLD','PLATINUM'] %}
   <a class="tab lvl-{{ code }} {{ 'on' if level==code }}"
-     href="{{ url_for('customers', level=code) }}">
+     href="{{ url_for('customers.customers', level=code) }}">
     {{ lvl[code] }} <span class="tab-num">{{ counts.get(code, 0) }}</span>
   </a>
   {% endfor %}
@@ -42,9 +42,9 @@
     <td>{{ c.points }}</td>
     <td>{{ c.registered_at.strftime('%Y-%m-%d') if c.registered_at }}</td>
     <td>
-      <a class="btn small" href="{{ url_for('customer_edit', cid=c.customer_id) }}">编辑</a>
+      <a class="btn small" href="{{ url_for('customers.customer_edit', cid=c.customer_id) }}">编辑</a>
       {% if session.role == 'ADMIN' %}
-      <form method="post" action="{{ url_for('customer_delete', cid=c.customer_id) }}"
+      <form method="post" action="{{ url_for('customers.customer_delete', cid=c.customer_id) }}"
             style="display:inline-block;"
             onsubmit="return confirm('确定要删除会员「{{ c.name }}」吗？其历史订单将转为散客。');">
         <button class="btn small danger" type="submit">删除</button>

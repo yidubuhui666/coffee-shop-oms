@@ -4,7 +4,7 @@
 <div class="section-title">
   <h2>菜单</h2>
   {% if session.role == 'ADMIN' %}
-  <a class="btn" href="{{ url_for('product_new') }}">+ 新增商品</a>
+  <a class="btn" href="{{ url_for('products.product_new') }}">+ 新增商品</a>
   {% endif %}
 </div>
 
@@ -30,9 +30,9 @@
       </div>
       {% if session.role == 'ADMIN' %}
       <div class="actions">
-        <a class="btn small secondary" href="{{ url_for('product_edit', pid=p.product_id) }}">编辑</a>
+        <a class="btn small secondary" href="{{ url_for('products.product_edit', pid=p.product_id) }}">编辑</a>
         <form style="display:inline;" method="post"
-              action="{{ url_for('product_delete', pid=p.product_id) }}"
+              action="{{ url_for('products.product_delete', pid=p.product_id) }}"
               onsubmit="return confirm('确认删除此商品？');">
           <button class="btn small danger" type="submit">删除</button>
         </form>

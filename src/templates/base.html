@@ -11,18 +11,18 @@
   <h1>☕ 咖啡店订单管理系统</h1>
   <nav>
     {% set active = request.endpoint %}
-    <a href="{{ url_for('dashboard') }}"  class="{{ 'active' if active=='dashboard' }}">仪表盘</a>
-    <a href="{{ url_for('menu') }}"       class="{{ 'active' if active in ['menu','product_new','product_edit'] }}">菜单</a>
-    <a href="{{ url_for('order_new') }}"  class="{{ 'active' if active=='order_new' }}">下单</a>
-    <a href="{{ url_for('orders') }}"     class="{{ 'active' if active in ['orders','order_detail'] }}">订单</a>
-    <a href="{{ url_for('customers') }}"  class="{{ 'active' if active in ['customers','customer_new'] }}">会员</a>
+    <a href="{{ url_for('main.dashboard') }}"  class="{{ 'active' if active=='dashboard' }}">仪表盘</a>
+    <a href="{{ url_for('products.menu') }}"       class="{{ 'active' if active in ['menu','product_new','product_edit'] }}">菜单</a>
+    <a href="{{ url_for('orders.order_new') }}"  class="{{ 'active' if active=='order_new' }}">下单</a>
+    <a href="{{ url_for('orders.orders') }}"     class="{{ 'active' if active in ['orders','order_detail'] }}">订单</a>
+    <a href="{{ url_for('customers.customers') }}"  class="{{ 'active' if active in ['customers','customer_new'] }}">会员</a>
     {% if session.role == 'ADMIN' %}
-    <a href="{{ url_for('inventory') }}"  class="{{ 'active' if active in ['inventory','inventory_new'] }}">库存</a>
-    <a href="{{ url_for('recipes') }}"    class="{{ 'active' if active=='recipes' }}">配方</a>
-    <a href="{{ url_for('promotions') }}" class="{{ 'active' if active in ['promotions','promotion_new'] }}">促销</a>
-    <a href="{{ url_for('staff_list') }}" class="{{ 'active' if active in ['staff_list','staff_new','staff_edit'] }}">员工</a>
+    <a href="{{ url_for('inventory.inventory') }}"  class="{{ 'active' if active in ['inventory','inventory_new'] }}">库存</a>
+    <a href="{{ url_for('recipes.recipes') }}"    class="{{ 'active' if active=='recipes' }}">配方</a>
+    <a href="{{ url_for('promotions.promotions') }}" class="{{ 'active' if active in ['promotions','promotion_new'] }}">促销</a>
+    <a href="{{ url_for('staff.staff_list') }}" class="{{ 'active' if active in ['staff_list','staff_new','staff_edit'] }}">员工</a>
     {% endif %}
-    <a href="{{ url_for('analytics') }}"  class="{{ 'active' if active in ['analytics','stats'] }}">统计</a>
+    <a href="{{ url_for('analytics.analytics') }}"  class="{{ 'active' if active in ['analytics','stats'] }}">统计</a>
   </nav>
   <div class="userbox">
     {% set role_zh = {'ADMIN':'管理员','BARISTA':'咖啡师','CASHIER':'收银员'} %}
@@ -34,7 +34,7 @@
       <div class="switch-menu" id="switchMenu">
         <div class="switch-head">快速切换账号</div>
         {% for s in switchable_staff %}
-        <form method="post" action="{{ url_for('switch_to', sid=s.staff_id) }}">
+        <form method="post" action="{{ url_for('auth.switch_to', sid=s.staff_id) }}">
           <button type="submit" class="switch-item">
             <span class="switch-name">{{ s.name }}</span>
             <span class="switch-role role-{{ s.role }}">{{ role_zh.get(s.role, s.role) }}</span>
@@ -42,12 +42,12 @@
         </form>
         {% endfor %}
         <div class="switch-divider"></div>
-        <a class="switch-item logout" href="{{ url_for('logout') }}">🚪 退出登录</a>
+        <a class="switch-item logout" href="{{ url_for('auth.logout') }}">🚪 退出登录</a>
       </div>
     </div>
     {% else %}
     {{ session.name }}（{{ role_zh[session.role] }}）
-    <a href="{{ url_for('logout') }}">退出</a>
+    <a href="{{ url_for('auth.logout') }}">退出</a>
     {% endif %}
   </div>
 </header>

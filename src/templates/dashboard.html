@@ -53,7 +53,7 @@
     <div class="hc-label">待处理订单</div>
     <div class="hc-value">{{ pending_count }}</div>
     <div class="hc-trend">
-      <a href="{{ url_for('orders', when='today', status='PREPARING') }}"
+      <a href="{{ url_for('orders.orders', when='today', status='PREPARING') }}"
          style="color:#fff;text-decoration:underline;opacity:.85;">查看制作中 →</a>
     </div>
   </div>
@@ -71,7 +71,7 @@
   <div class="dash-panel">
     <div class="panel-head">
       <h3>📈 近 7 天营收</h3>
-      <a class="panel-link" href="{{ url_for('analytics') }}">详细 →</a>
+      <a class="panel-link" href="{{ url_for('analytics.analytics') }}">详细 →</a>
     </div>
     <div class="bar-chart">
       {% set max_amt = (seven_days|map(attribute=1)|select|map('float')|max) or 1 %}
@@ -92,7 +92,7 @@
   <div class="dash-panel">
     <div class="panel-head">
       <h3>🔥 今日畅销 TOP 5</h3>
-      <a class="panel-link" href="{{ url_for('menu') }}">查看菜单 →</a>
+      <a class="panel-link" href="{{ url_for('products.menu') }}">查看菜单 →</a>
     </div>
     {% set max_qty = (top_products|map(attribute=2)|max) or 1 %}
     {% for name, img, qty in top_products %}
@@ -123,7 +123,7 @@
     <div class="panel-head">
       <h3>⚠️ 库存预警 <span style="color:#b04835;font-weight:normal;font-size:13px;">（{{ low_stock|length }} 种原料不足）</span></h3>
       {% if session.role == 'ADMIN' %}
-      <a class="panel-link" href="{{ url_for('inventory') }}">管理库存 →</a>
+      <a class="panel-link" href="{{ url_for('inventory.inventory') }}">管理库存 →</a>
       {% endif %}
     </div>
     {% if low_stock %}
@@ -148,7 +148,7 @@
   <div class="dash-panel">
     <div class="panel-head">
       <h3>🎖️ 会员等级分布</h3>
-      <a class="panel-link" href="{{ url_for('customers') }}">查看会员 →</a>
+      <a class="panel-link" href="{{ url_for('customers.customers') }}">查看会员 →</a>
     </div>
     {% set total_m = total_customers if total_customers else 1 %}
     <div class="level-list">

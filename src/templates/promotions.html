@@ -3,7 +3,7 @@
 {% block body %}
 <div class="section-title">
   <h2>促销码管理</h2>
-  <a class="btn" href="{{ url_for('promotion_new') }}">+ 新增促销码</a>
+  <a class="btn" href="{{ url_for('promotions.promotion_new') }}">+ 新增促销码</a>
 </div>
 <p style="color:#8b7569;margin-top:-6px;">
   下单时输入优惠码可享受对应折扣。如果客户是会员，系统自动取「会员折扣」与「优惠码折扣」中更优惠的一项。
@@ -30,13 +30,13 @@
       {% else %}<span class="tag PAID">使用中</span>{% endif %}
     </td>
     <td>
-      <form method="post" action="{{ url_for('promotion_toggle', pid=p.promo_id) }}"
+      <form method="post" action="{{ url_for('promotions.promotion_toggle', pid=p.promo_id) }}"
             style="display:inline-block;">
         <button class="btn small {{ 'danger' if p.active else 'secondary' }}" type="submit">
           {{ '停用' if p.active else '启用' }}
         </button>
       </form>
-      <form method="post" action="{{ url_for('promotion_delete', pid=p.promo_id) }}"
+      <form method="post" action="{{ url_for('promotions.promotion_delete', pid=p.promo_id) }}"
             style="display:inline-block;"
             onsubmit="return confirm('确定要删除促销码「{{ p.code }}」吗？');">
         <button class="btn small danger" type="submit">删除</button>

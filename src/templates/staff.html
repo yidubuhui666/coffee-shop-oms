@@ -10,7 +10,7 @@
              style="width:220px;display:inline-block;">
       <button class="btn small" type="submit">搜索</button>
     </form>
-    <a class="btn" href="{{ url_for('staff_new') }}">+ 新增员工</a>
+    <a class="btn" href="{{ url_for('staff.staff_new') }}">+ 新增员工</a>
   </div>
 </div>
 <table>
@@ -34,9 +34,9 @@
       {% endif %}
     </td>
     <td>
-      <a class="btn small" href="{{ url_for('staff_edit', sid=s.staff_id) }}">编辑</a>
+      <a class="btn small" href="{{ url_for('staff.staff_edit', sid=s.staff_id) }}">编辑</a>
       {% if s.staff_id != session.staff_id %}
-      <form method="post" action="{{ url_for('staff_toggle', sid=s.staff_id) }}"
+      <form method="post" action="{{ url_for('staff.staff_toggle', sid=s.staff_id) }}"
             style="display:inline-block;"
             onsubmit="return confirm('确定要{{ '停用' if s.active else '启用' }}此员工吗？');">
         <button class="btn small {{ 'danger' if s.active else 'secondary' }}" type="submit">

@@ -18,6 +18,6 @@
   <label>告警阈值（低于此值会预警）</label>
   <input type="number" step="0.01" name="alert_threshold" value="10">
   <button class="btn" style="margin-top:18px;" type="submit">添加</button>
-  <a class="btn secondary" href="{{ url_for('inventory') }}">取消</a>
+  <a class="btn secondary" href="{{ url_for('inventory.inventory') }}">取消</a>
 </form>
 {% endblock %}

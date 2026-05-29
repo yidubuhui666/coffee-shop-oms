@@ -21,6 +21,6 @@
   <label><input type="checkbox" name="available" {% if product.available %}checked{% endif %}> 上架销售</label>
   {% endif %}
   <button type="submit" class="btn" style="margin-top:18px;">保存</button>
-  <a class="btn secondary" href="{{ url_for('menu') }}">取消</a>
+  <a class="btn secondary" href="{{ url_for('products.menu') }}">取消</a>
 </form>
 {% endblock %}

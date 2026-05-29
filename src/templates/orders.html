@@ -6,21 +6,21 @@
 
 <div class="section-title">
   <h2>订单列表</h2>
-  <a class="btn" href="{{ url_for('order_new') }}">+ 新建订单</a>
+  <a class="btn" href="{{ url_for('orders.order_new') }}">+ 新建订单</a>
 </div>
 
 <!-- 时间维度 tab -->
 <div class="tabbar">
   <a class="tab {{ 'on' if when=='today' }}"
-     href="{{ url_for('orders', when='today', status=cur_status) }}">
+     href="{{ url_for('orders.orders', when='today', status=cur_status) }}">
     今日订单 <span class="tab-num">{{ cnt_today }}</span>
   </a>
   <a class="tab {{ 'on' if when=='history' }}"
-     href="{{ url_for('orders', when='history', status=cur_status) }}">
+     href="{{ url_for('orders.orders', when='history', status=cur_status) }}">
     历史订单 <span class="tab-num">{{ cnt_history }}</span>
   </a>
   <a class="tab {{ 'on' if when=='all' }}"
-     href="{{ url_for('orders', when='all', status=cur_status) }}">
+     href="{{ url_for('orders.orders', when='all', status=cur_status) }}">
     全部订单 <span class="tab-num">{{ cnt_all }}</span>
   </a>
 </div>
@@ -28,10 +28,10 @@
 <!-- 状态筛选 -->
 <div style="margin:14px 0 16px;">
   <a class="btn small {{ '' if cur_status else 'secondary' }}"
-     href="{{ url_for('orders', when=when) }}">全部状态</a>
+     href="{{ url_for('orders.orders', when=when) }}">全部状态</a>
   {% for s in ['PENDING','PAID','PREPARING','READY','COMPLETED','CANCELLED'] %}
   <a class="btn small {{ '' if cur_status==s else 'secondary' }}"
-     href="{{ url_for('orders', when=when, status=s) }}">{{ st_zh[s] }}</a>
+     href="{{ url_for('orders.orders', when=when, status=s) }}">{{ st_zh[s] }}</a>
   {% endfor %}
 </div>
 
@@ -48,7 +48,7 @@
     <td>¥{{ '%.2f' % o.total_amount }}</td>
     <td>{{ pay_zh.get(o.payment_method, o.payment_method) }}</td>
     <td><span class="tag {{ o.status }}">{{ st_zh.get(o.status, o.status) }}</span></td>
-    <td><a class="btn small" href="{{ url_for('order_detail', oid=o.order_id) }}">查看</a></td>
+    <td><a class="btn small" href="{{ url_for('orders.order_detail', oid=o.order_id) }}">查看</a></td>
   </tr>
   {% else %}
   <tr><td colspan="9" style="text-align:center;color:#8b7569;padding:30px;">该筛选条件下暂无订单。</td></tr>
@@ -63,7 +63,7 @@
   <div>
     {% if pagination.has_prev %}
       <a class="btn small secondary"
-         href="{{ url_for('orders', when=when, status=cur_status, page=pagination.prev_num) }}">‹ 上一页</a>
+         href="{{ url_for('orders.orders', when=when, status=cur_status, page=pagination.prev_num) }}">‹ 上一页</a>
     {% endif %}
 
     {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
@@ -72,7 +72,7 @@
           <span class="btn small page-cur">{{ p }}</span>
         {% else %}
           <a class="btn small secondary"
-             href="{{ url_for('orders', when=when, status=cur_status, page=p) }}">{{ p }}</a>
+             href="{{ url_for('orders.orders', when=when, status=cur_status, page=p) }}">{{ p }}</a>
         {% endif %}
       {% else %}
         <span style="color:#8b7569;padding:0 4px;">…</span>
@@ -81,7 +81,7 @@
 
     {% if pagination.has_next %}
       <a class="btn small secondary"
-         href="{{ url_for('orders', when=when, status=cur_status, page=pagination.next_num) }}">下一页 ›</a>
+         href="{{ url_for('orders.orders', when=when, status=cur_status, page=pagination.next_num) }}">下一页 ›</a>
     {% endif %}
   </div>
 </div>

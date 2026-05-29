@@ -11,7 +11,7 @@
 
 <div class="section-title"><h2>订单 #{{ order.order_id }}
   <span class="tag {{ order.status }}">{{ st_zh.get(order.status, order.status) }}</span></h2>
-  <a class="btn secondary" href="{{ url_for('orders') }}">返回</a>
+  <a class="btn secondary" href="{{ url_for('orders.orders') }}">返回</a>
 </div>
 <div class="cards">
   <div class="card"><h3>下单时间</h3>{{ order.order_time.strftime('%Y-%m-%d %H:%M') }}</div>
@@ -97,7 +97,7 @@
 </table>
 
 <h3 style="margin-top:24px;">更新状态</h3>
-<form method="post" action="{{ url_for('order_status', oid=order.order_id) }}">
+<form method="post" action="{{ url_for('orders.order_status', oid=order.order_id) }}">
   <select name="status">
     {% for s in ['PENDING','PAID','PREPARING','READY','COMPLETED','CANCELLED'] %}
     <option value="{{ s }}" {% if order.status==s %}selected{% endif %}>{{ st_zh[s] }}</option>

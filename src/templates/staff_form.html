@@ -36,7 +36,7 @@
   </div>
   <div style="margin-top:24px;">
     <button class="btn" type="submit">{{ '保存修改' if staff else '添加员工' }}</button>
-    <a class="btn secondary" href="{{ url_for('staff_list') }}">取消</a>
+    <a class="btn secondary" href="{{ url_for('staff.staff_list') }}">取消</a>
   </div>
 </form>
 {% endblock %}

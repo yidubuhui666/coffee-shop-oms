@@ -4,7 +4,7 @@
 
 <div class="section-title">
   <h2>原料库存管理</h2>
-  <a class="btn" href="{{ url_for('inventory_new') }}">+ 新增原料</a>
+  <a class="btn" href="{{ url_for('inventory.inventory_new') }}">+ 新增原料</a>
 </div>
 
 <div class="inv-layout">
@@ -23,7 +23,7 @@
       {% for i in items_ %}
       {% set is_low = i.quantity <= i.alert_threshold %}
       <a class="ing-row {{ 'on' if selected and selected.ingredient_id == i.ingredient_id }} {{ 'low' if is_low }}"
-         href="{{ url_for('inventory', selected=i.ingredient_id) }}"
+         href="{{ url_for('inventory.inventory', selected=i.ingredient_id) }}"
          data-name="{{ i.name|lower }}">
         <span class="ing-dot {{ 'low' if is_low }}"></span>
         <span class="ing-name">{{ i.name }}</span>
@@ -130,7 +130,7 @@
 
       <!-- 删除 -->
       <form method="post" class="action-card danger"
-            action="{{ url_for('inventory_delete', iid=selected.ingredient_id) }}"
+            action="{{ url_for('inventory.inventory_delete', iid=selected.ingredient_id) }}"
             onsubmit="return confirm('确定要删除原料「{{ selected.name }}」吗？');">
         <div class="action-title">🗑️ 删除</div>
         <div class="action-desc">从系统中移除此原料<br>（被配方使用时无法删除）</div>
