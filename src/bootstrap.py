@@ -12,7 +12,6 @@ def bootstrap_demo_data() -> None:
 
     demo_staff = [
         Staff(username="admin",     password="admin123",   name="杨帆",   role="ADMIN"),
-        Staff(username="xuyueqian", password="xuyq123",    name="许跃骞", role="ADMIN"),
         Staff(username="barista",   password="barista123", name="李明",   role="BARISTA"),
         Staff(username="cashier",   password="cashier123", name="王磊",   role="CASHIER"),
     ]

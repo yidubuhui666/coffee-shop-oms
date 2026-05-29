@@ -42,5 +42,7 @@
 | admin | admin123 | 杨帆 | ADMIN |
 | barista | barista123 | 李明 | BARISTA |
 | cashier | cashier123 | 王磊 | CASHIER |
-| xuyueqian | xuyq123 | 许跃骞 | ADMIN |
 | xyq | 070203 | 许跃骞 | ADMIN |
+
+> 说明：早期有重复的许跃骞账号 `xuyueqian`，已统一保留 `xyq` 并删除 `xuyueqian`。
+> 协作者拉取后运行一次 `seed_cleanup_staff.py` 与 `seed_admin.py` 即可同步。
