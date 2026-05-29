@@ -30,4 +30,4 @@ with app.app_context():
         else:
             db.session.delete(s)
             db.session.commit()
-            print("✓ 已删除重复账号：xuyueqian（许跃骞）")
+            print("[OK] 已删除重复账号：xuyueqian（许跃骞）")

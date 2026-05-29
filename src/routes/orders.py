@@ -13,6 +13,9 @@ from decorators import login_required
 
 bp = Blueprint("orders", __name__)
 
+# 积分规则：每 100 积分可抵 ¥1；每消费 ¥1（实付）回赠 1 积分。
+POINTS_PER_YUAN = 100
+
 
 @bp.route("/orders")
 @login_required
@@ -108,8 +111,29 @@ def order_new():
             promo_rate = Decimal(str(promo.discount))
             if promo_rate < discount_rate:
                 discount_rate = promo_rate
-        total = (subtotal * discount_rate).quantize(Decimal("0.01"))
+        discounted = (subtotal * discount_rate).quantize(Decimal("0.01"))
+
+        # 积分抵现：每 100 积分抵 ¥1；不超过会员余额、也不超过折后金额。
+        points_used = 0
+        redeem_amt = Decimal("0")
+        if order.customer_id:
+            try:
+                want = int(request.form.get("points_use", 0) or 0)
+            except ValueError:
+                want = 0
+            if want > 0:
+                cust = db.session.get(Customer, order.customer_id)
+                max_by_balance = cust.points if cust else 0
+                max_by_amount = int(discounted * POINTS_PER_YUAN)
+                points_used = max(0, min(want, max_by_balance, max_by_amount))
+                if points_used > 0:
+                    redeem_amt = (Decimal(points_used) / POINTS_PER_YUAN
+                                  ).quantize(Decimal("0.01"))
+                    cust.points -= points_used
+
+        total = (discounted - redeem_amt).quantize(Decimal("0.01"))
         order.total_amount = total
+        order.points_used = points_used
 
         # 扣库存
         for iid, qty_consumed in consume_map.items():
@@ -120,8 +144,10 @@ def order_new():
         db.session.commit()
         msg = f"订单 #{order.order_id} 已创建（原价 ¥{subtotal:.2f}"
         if discount_rate < 1:
-            msg += f"，{int(discount_rate*100)}折后 ¥{total:.2f}"
-        msg += "）"
+            msg += f"，{int(discount_rate*100)}折后 ¥{discounted:.2f}"
+        if points_used:
+            msg += f"，使用 {points_used} 积分抵 ¥{redeem_amt:.2f}"
+        msg += f"，实付 ¥{total:.2f}）"
         flash(msg, "ok")
         return redirect(url_for("orders.order_detail", oid=order.order_id))
 
@@ -129,7 +155,8 @@ def order_new():
     return render_template("order_new.html",
                            products=Product.query.filter_by(available=True).all(),
                            customers=Customer.query.all(),
-                           md_map=md_map)
+                           md_map=md_map,
+                           points_per_yuan=POINTS_PER_YUAN)
 
 
 @bp.route("/orders/<int:oid>")
@@ -148,10 +175,19 @@ def order_detail(oid):
 def order_status(oid):
     o = Order.query.get_or_404(oid)
     new_status = request.form["status"]
-    if new_status == "PAID" and o.status != "PAID" and o.customer_id:
-        cust = Customer.query.get(o.customer_id)
-        if cust:
-            cust.points += int(o.total_amount or 0)
+    cust = db.session.get(Customer, o.customer_id) if o.customer_id else None
+
+    # 付款：回赠积分（每实付 ¥1 得 1 积分），仅在首次转为 PAID 时计。
+    if new_status == "PAID" and o.status != "PAID" and cust:
+        cust.points += int(o.total_amount or 0)
+
+    # 取消：退还本单抵扣的积分；若此前已付款，收回已赠积分。
+    if new_status == "CANCELLED" and o.status != "CANCELLED" and cust:
+        if o.points_used:
+            cust.points += o.points_used
+        if o.status == "PAID":
+            cust.points = max(0, cust.points - int(o.total_amount or 0))
+
     o.status = new_status
     if new_status == "PAID":
         o.paid_amount = o.total_amount

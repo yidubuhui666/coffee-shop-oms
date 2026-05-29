@@ -10,8 +10,9 @@
         <option value="">散客</option>
         {% set lvl = {'BRONZE':'青铜','SILVER':'白银','GOLD':'黄金','PLATINUM':'铂金'} %}
         {% for c in customers %}
-        <option value="{{ c.customer_id }}" data-level="{{ c.member_level }}">
-          {{ c.name }}（{{ lvl[c.member_level] }}）
+        <option value="{{ c.customer_id }}" data-level="{{ c.member_level }}"
+                data-points="{{ c.points }}">
+          {{ c.name }}（{{ lvl[c.member_level] }}・{{ c.points }} 积分）
         </option>
         {% endfor %}
       </select>
@@ -31,6 +32,20 @@
   <input type="text" name="promo_code" placeholder="如 SUMMER20" oninput="calc()">
   <label>备注</label>
   <input type="text" name="remark" placeholder="少糖、多冰…">
+
+  <!-- 积分抵现：仅选择会员后可用 -->
+  <div id="pointsBox" style="display:none;margin-top:10px;">
+    <label>使用积分抵现
+      <span style="color:#8b7569;font-weight:normal;">
+        （{{ points_per_yuan }} 积分 = ¥1；当前可用 <strong id="ptsAvail">0</strong> 积分）
+      </span>
+    </label>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="number" name="points_use" id="pointsUse" min="0" step="{{ points_per_yuan }}"
+             value="0" oninput="calc()" style="max-width:200px;">
+      <button type="button" class="btn secondary small" onclick="useMaxPoints()">用满</button>
+    </div>
+  </div>
 
   <h3 style="margin-top:24px;color:#6f4e37;">商品明细</h3>
   <div class="cart-row" style="font-weight:600;color:#5b4636;">
@@ -58,6 +73,9 @@
     <div class="total-line"><span>原价合计</span><span id="subtotal">¥0.00</span></div>
     <div class="total-line discount-line" id="discountLine" style="display:none;">
       <span id="discountLabel">会员折扣</span><span id="discountAmt">- ¥0.00</span>
+    </div>
+    <div class="total-line discount-line" id="redeemLine" style="display:none;">
+      <span id="redeemLabel">积分抵现</span><span id="redeemAmt">- ¥0.00</span>
     </div>
     <div class="total-line final-line">
       <span>实付金额</span><span id="finalAmt">¥0.00</span>
@@ -99,10 +117,25 @@
 <script>
 const MD_MAP = {{ md_map|tojson }};
 const LVL_ZH = {BRONZE:'青铜',SILVER:'白银',GOLD:'黄金',PLATINUM:'铂金'};
+const PPY = {{ points_per_yuan }};   // 每多少积分抵 ¥1
 
 function addRow() {
   const tpl = document.getElementById('row-tpl').content.cloneNode(true);
   document.getElementById('rows').appendChild(tpl);
+  calc();
+}
+
+function curCustomerPoints() {
+  const sel = document.getElementById('customerSel');
+  return parseInt(sel.options[sel.selectedIndex]?.dataset.points || 0) || 0;
+}
+
+function useMaxPoints() {
+  // 取「会员余额」与「折后金额可抵上限」的较小值，并向下取整到 PPY 的整数倍。
+  const avail = curCustomerPoints();
+  const discounted = parseFloat(document.getElementById('finalAmt').dataset.discounted || 0);
+  const maxByAmt = Math.floor(discounted * PPY);
+  document.getElementById('pointsUse').value = Math.max(0, Math.min(avail, maxByAmt));
   calc();
 }
 
@@ -118,18 +151,37 @@ function calc() {
 
   // 会员折扣
   const custSel = document.getElementById('customerSel');
-  const level = custSel.options[custSel.selectedIndex]?.dataset.level;
+  const sel = custSel.options[custSel.selectedIndex];
+  const level = sel?.dataset.level;
   let rate = 1.0, label = '会员折扣';
   if (level && MD_MAP[level]) {
     rate = MD_MAP[level];
     label = `会员折扣（${LVL_ZH[level]} ${Math.round(rate*100)}折）`;
   }
 
-  const finalAmt = subtotal * rate;
-  const discount = subtotal - finalAmt;
+  const discounted = subtotal * rate;     // 折后金额
+  const discount = subtotal - discounted;
 
+  // 积分抵现框：仅选了会员才显示
+  const pbox = document.getElementById('pointsBox');
+  const isMember = !!custSel.value;
+  pbox.style.display = isMember ? '' : 'none';
+  const avail = curCustomerPoints();
+  document.getElementById('ptsAvail').textContent = avail;
+
+  // 计算抵扣
+  let pts = isMember ? (parseInt(document.getElementById('pointsUse').value) || 0) : 0;
+  const maxByAmt = Math.floor(discounted * PPY);
+  pts = Math.max(0, Math.min(pts, avail, maxByAmt));
+  if (isMember) document.getElementById('pointsUse').value = pts;
+  const redeem = pts / PPY;
+
+  const finalAmt = discounted - redeem;
+  const finalEl = document.getElementById('finalAmt');
+  finalEl.dataset.discounted = discounted;      // 供「用满」按钮读取
   document.getElementById('subtotal').textContent = '¥' + subtotal.toFixed(2);
-  document.getElementById('finalAmt').textContent = '¥' + finalAmt.toFixed(2);
+  finalEl.textContent = '¥' + finalAmt.toFixed(2);
+
   const dl = document.getElementById('discountLine');
   if (discount > 0.001) {
     dl.style.display = '';
@@ -137,6 +189,15 @@ function calc() {
     document.getElementById('discountAmt').textContent = '- ¥' + discount.toFixed(2);
   } else {
     dl.style.display = 'none';
+  }
+
+  const rl = document.getElementById('redeemLine');
+  if (redeem > 0.001) {
+    rl.style.display = '';
+    document.getElementById('redeemLabel').textContent = `积分抵现（${pts} 积分）`;
+    document.getElementById('redeemAmt').textContent = '- ¥' + redeem.toFixed(2);
+  } else {
+    rl.style.display = 'none';
   }
 }
 calc();

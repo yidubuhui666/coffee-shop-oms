@@ -7,7 +7,8 @@
 {% set ns = namespace(sub=0) %}
 {% for it in order.items %}{% set ns.sub = ns.sub + it.unit_price * it.quantity %}{% endfor %}
 {% set subtotal = ns.sub %}
-{% set discount = subtotal - order.total_amount %}
+{% set redeem = (order.points_used or 0) / 100 %}
+{% set discount = subtotal - order.total_amount - redeem %}
 
 <div class="section-title"><h2>订单 #{{ order.order_id }}
   <span class="tag {{ order.status }}">{{ st_zh.get(order.status, order.status) }}</span></h2>
@@ -53,6 +54,12 @@
     </div>
     {% endif %}
   {% endif %}
+  {% if order.points_used %}
+  <div class="amt-line" style="color:#b04835;">
+    <span>积分抵现（{{ order.points_used }} 积分）</span>
+    <span>- ¥{{ '%.2f' % redeem }}</span>
+  </div>
+  {% endif %}
   <div class="amt-line total-line">
     <span>实付金额</span>
     <span>¥{{ '%.2f' % order.total_amount }}</span>
@@ -61,6 +68,12 @@
     支付方式：{{ {'WECHAT':'微信','ALIPAY':'支付宝','CARD':'银行卡','CASH':'现金'}.get(order.payment_method, order.payment_method) }}
     · {{ '堂食' if order.dine_in else '外带' }}
   </div>
+  {% if order.customer %}
+  <div style="font-size:12px;color:#8b7569;margin-top:4px;">
+    会员当前积分：<strong style="color:#6f4e37;">{{ order.customer.points }}</strong>
+    {% if order.status == 'PAID' %}· 本单已回赠 {{ order.total_amount|int }} 积分{% endif %}
+  </div>
+  {% endif %}
 </div>
 
 <style>

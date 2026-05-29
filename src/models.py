@@ -73,6 +73,7 @@ class Order(db.Model):
     payment_method = db.Column(db.String(10), default="WECHAT")
     dine_in        = db.Column(db.Boolean, default=True)
     remark         = db.Column(db.String(200))
+    points_used    = db.Column(db.Integer, default=0)   # 本单抵扣的积分
 
     customer = db.relationship("Customer", backref="orders")
     staff    = db.relationship("Staff",    backref="orders")

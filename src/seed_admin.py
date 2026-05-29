@@ -23,7 +23,7 @@ with app.app_context():
         if not existing.phone:
             existing.phone = PHONE
             db.session.commit()
-            print(f"✓ 已为账号 xyq 补充手机号：{PHONE}")
+            print(f"[OK] 已为账号 xyq 补充手机号：{PHONE}")
         else:
             print(f"账号 xyq 已存在（姓名：{existing.name}，手机号：{existing.phone}），跳过。")
     else:
@@ -37,4 +37,4 @@ with app.app_context():
             hire_date=date.today(),
         ))
         db.session.commit()
-        print(f"✓ 已添加管理员账号：xyq / 070203（许跃骞），手机号 {PHONE}")
+        print(f"[OK] 已添加管理员账号：xyq / 070203（许跃骞），手机号 {PHONE}")

@@ -20,7 +20,7 @@
 
 <!-- 核心指标卡片 -->
 <div class="hero-cards">
-  <div class="hero-card grad-1">
+  <a class="hero-card grad-1" href="{{ url_for('orders.orders', when='today') }}">
     <div class="hc-icon">📋</div>
     <div class="hc-label">今日订单</div>
     <div class="hc-value">{{ today_orders }}</div>
@@ -32,9 +32,9 @@
     {% else %}
       <div class="hc-trend"><span style="opacity:.6;">昨日无数据</span></div>
     {% endif %}
-  </div>
+  </a>
 
-  <div class="hero-card grad-2">
+  <a class="hero-card grad-2" href="{{ url_for('analytics.analytics') }}">
     <div class="hc-icon">💰</div>
     <div class="hc-label">今日营收</div>
     <div class="hc-value">¥{{ '%.0f' % (today_revenue or 0) }}</div>
@@ -46,24 +46,21 @@
     {% else %}
       <div class="hc-trend"><span style="opacity:.6;">昨日无数据</span></div>
     {% endif %}
-  </div>
+  </a>
 
-  <div class="hero-card grad-3">
+  <a class="hero-card grad-3" href="{{ url_for('orders.orders', when='today', status='PREPARING') }}">
     <div class="hc-icon">⏳</div>
     <div class="hc-label">待处理订单</div>
     <div class="hc-value">{{ pending_count }}</div>
-    <div class="hc-trend">
-      <a href="{{ url_for('orders.orders', when='today', status='PREPARING') }}"
-         style="color:#fff;text-decoration:underline;opacity:.85;">查看制作中 →</a>
-    </div>
-  </div>
+    <div class="hc-trend"><span style="opacity:.85;">查看制作中 →</span></div>
+  </a>
 
-  <div class="hero-card grad-4">
+  <a class="hero-card grad-4" href="{{ url_for('customers.customers') }}">
     <div class="hc-icon">👥</div>
     <div class="hc-label">会员总数</div>
     <div class="hc-value">{{ total_customers }}</div>
     <div class="hc-trend">商品 <strong>{{ total_products }}</strong> 款在售</div>
-  </div>
+  </a>
 </div>
 
 <!-- 两栏：营收趋势 + 今日畅销 -->
@@ -177,9 +174,10 @@
 
 .hero-cards { display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
               gap:16px; margin-bottom:24px; }
-.hero-card  { padding:22px; border-radius:14px; color:#fff; position:relative; overflow:hidden;
-              box-shadow:0 4px 14px rgba(0,0,0,.12); transition:transform .2s; }
-.hero-card:hover { transform:translateY(-3px); }
+.hero-card  { display:block; padding:22px; border-radius:14px; color:#fff !important; position:relative; overflow:hidden;
+              box-shadow:0 4px 14px rgba(0,0,0,.12); transition:transform .2s, box-shadow .2s; }
+.hero-card:hover { transform:translateY(-3px); box-shadow:0 8px 22px rgba(0,0,0,.2); text-decoration:none; }
+.hero-card::after { content:"›"; position:absolute; top:16px; right:18px; font-size:22px; opacity:.45; }
 .hero-card.grad-1 { background:linear-gradient(135deg,#6f4e37,#a06641); }
 .hero-card.grad-2 { background:linear-gradient(135deg,#b04835,#e87a4a); }
 .hero-card.grad-3 { background:linear-gradient(135deg,#c79a3b,#e0bf5e); }

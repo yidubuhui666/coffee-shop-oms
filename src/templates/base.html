@@ -10,19 +10,19 @@
 <header class="topbar">
   <h1>☕ 咖啡店订单管理系统</h1>
   <nav>
-    {% set active = request.endpoint %}
-    <a href="{{ url_for('main.dashboard') }}"  class="{{ 'active' if active=='dashboard' }}">仪表盘</a>
-    <a href="{{ url_for('products.menu') }}"       class="{{ 'active' if active in ['menu','product_new','product_edit'] }}">菜单</a>
-    <a href="{{ url_for('orders.order_new') }}"  class="{{ 'active' if active=='order_new' }}">下单</a>
-    <a href="{{ url_for('orders.orders') }}"     class="{{ 'active' if active in ['orders','order_detail'] }}">订单</a>
-    <a href="{{ url_for('customers.customers') }}"  class="{{ 'active' if active in ['customers','customer_new'] }}">会员</a>
+    {% set active = (request.endpoint or '').split('.')[0] %}
+    <a href="{{ url_for('main.dashboard') }}"  class="{{ 'active' if active=='main' }}">仪表盘</a>
+    <a href="{{ url_for('products.menu') }}"       class="{{ 'active' if active=='products' }}">菜单</a>
+    <a href="{{ url_for('orders.order_new') }}"  class="{{ 'active' if request.endpoint=='orders.order_new' }}">下单</a>
+    <a href="{{ url_for('orders.orders') }}"     class="{{ 'active' if active=='orders' and request.endpoint!='orders.order_new' }}">订单</a>
+    <a href="{{ url_for('customers.customers') }}"  class="{{ 'active' if active=='customers' }}">会员</a>
     {% if session.role == 'ADMIN' %}
-    <a href="{{ url_for('inventory.inventory') }}"  class="{{ 'active' if active in ['inventory','inventory_new'] }}">库存</a>
+    <a href="{{ url_for('inventory.inventory') }}"  class="{{ 'active' if active=='inventory' }}">库存</a>
     <a href="{{ url_for('recipes.recipes') }}"    class="{{ 'active' if active=='recipes' }}">配方</a>
-    <a href="{{ url_for('promotions.promotions') }}" class="{{ 'active' if active in ['promotions','promotion_new'] }}">促销</a>
-    <a href="{{ url_for('staff.staff_list') }}" class="{{ 'active' if active in ['staff_list','staff_new','staff_edit'] }}">员工</a>
+    <a href="{{ url_for('promotions.promotions') }}" class="{{ 'active' if active=='promotions' }}">促销</a>
+    <a href="{{ url_for('staff.staff_list') }}" class="{{ 'active' if active=='staff' }}">员工</a>
     {% endif %}
-    <a href="{{ url_for('analytics.analytics') }}"  class="{{ 'active' if active in ['analytics','stats'] }}">统计</a>
+    <a href="{{ url_for('analytics.analytics') }}"  class="{{ 'active' if active=='analytics' }}">统计</a>
   </nav>
   <div class="userbox">
     {% set role_zh = {'ADMIN':'管理员','BARISTA':'咖啡师','CASHIER':'收银员'} %}
