@@ -2,7 +2,7 @@
 from decimal import Decimal
 
 from flask import (Blueprint, render_template, request, redirect, url_for, flash)
-from sqlalchemy.orm import selectinload
+from sqlalchemy import or_
 
 from models import db, Category, Product
 from decorators import login_required, admin_required
@@ -13,10 +13,27 @@ bp = Blueprint("products", __name__)
 @bp.route("/menu")
 @login_required
 def menu():
-    cats = (Category.query
-            .options(selectinload(Category.products))
-            .order_by(Category.sort_order).all())
-    return render_template("menu.html", categories=cats)
+    kw = request.args.get("q", "").strip()
+    cat_id = request.args.get("cat", type=int)
+    cats = Category.query.order_by(Category.sort_order).all()
+
+    pq = Product.query
+    if cat_id:
+        pq = pq.filter(Product.category_id == cat_id)
+    if kw:
+        like = f"%{kw}%"
+        pq = pq.filter(or_(Product.name.like(like),
+                           Product.description.like(like)))
+    prods = pq.order_by(Product.product_id).all()
+
+    by_cat = {}
+    for p in prods:
+        by_cat.setdefault(p.category_id, []).append(p)
+    # 只保留有匹配商品的分类，按分类排序
+    groups = [(c, by_cat[c.category_id]) for c in cats if c.category_id in by_cat]
+
+    return render_template("menu.html", groups=groups, all_cats=cats,
+                           kw=kw, cat_id=cat_id, total=len(prods))
 
 
 @bp.route("/products/new", methods=["GET", "POST"])

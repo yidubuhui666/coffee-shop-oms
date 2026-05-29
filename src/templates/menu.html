@@ -8,11 +8,26 @@
   {% endif %}
 </div>
 
-{% for cat in categories %}
+<form method="get" class="menu-search">
+  <input type="text" name="q" value="{{ kw }}" placeholder="搜索商品名称或描述…">
+  <select name="cat">
+    <option value="">全部分类</option>
+    {% for c in all_cats %}
+    <option value="{{ c.category_id }}" {{ 'selected' if cat_id==c.category_id }}>{{ c.name }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn small" type="submit">搜索</button>
+  {% if kw or cat_id %}
+  <a class="btn small secondary" href="{{ url_for('products.menu') }}">清除</a>
+  <span class="menu-result">共 {{ total }} 个结果</span>
+  {% endif %}
+</form>
+
+{% for cat, products in groups %}
 <div class="menu-cat">
   <h3>{{ cat.name }}</h3>
   <div class="product-grid">
-    {% for p in cat.products %}
+    {% for p in products %}
     <div class="product-card">
       {% if p.image %}
       <img src="{{ url_for('static', filename='img/products/' + p.image) }}"
@@ -42,5 +57,16 @@
     {% endfor %}
   </div>
 </div>
+{% else %}
+<div style="text-align:center;color:#8b7569;padding:50px;background:#fff;border-radius:10px;">
+  没有找到匹配的商品。{% if kw or cat_id %}<a href="{{ url_for('products.menu') }}">查看全部 →</a>{% endif %}
+</div>
 {% endfor %}
+
+<style>
+.menu-search { display:flex; gap:8px; align-items:center; margin-bottom:18px; flex-wrap:wrap; }
+.menu-search input[type=text] { max-width:280px; }
+.menu-search select { max-width:160px; }
+.menu-result { color:#8b7569; font-size:13px; }
+</style>
 {% endblock %}
