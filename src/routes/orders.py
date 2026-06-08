@@ -84,20 +84,33 @@ def order_new():
         subtotal = Decimal("0")
         consume_map = {}
 
+        valid_items = 0
         for pid, qty, sz in zip(ids, qtys, sizes):
-            if not pid or int(qty) <= 0:
+            # 数量必须是正整数；非数字 / 空 / 0 / 负数一律跳过，避免 int() 抛错
+            if not pid or not str(qty).strip().lstrip("-").isdigit():
+                continue
+            qty_int = int(qty)
+            if qty_int <= 0:
                 continue
             p = Product.query.get(int(pid))
-            qty_int = int(qty)
+            if not p:
+                continue
             item = OrderItem(order_id=order.order_id, product_id=p.product_id,
                              quantity=qty_int, unit_price=p.price, size=sz or "M")
             subtotal += p.price * qty_int
             db.session.add(item)
+            valid_items += 1
 
             for link in ProductIngredient.query.filter_by(product_id=p.product_id).all():
                 consume_map[link.ingredient_id] = (
                     consume_map.get(link.ingredient_id, Decimal("0"))
                     + Decimal(str(link.consume_qty)) * qty_int)
+
+        # 没有任何有效商品则不创建空订单，回到下单页提示
+        if valid_items == 0:
+            db.session.rollback()
+            flash("购物车为空，请至少选择一件商品并填写数量。", "error")
+            return redirect(url_for("orders.order_new"))
 
         # 会员折扣
         discount_rate = Decimal("1.00")
