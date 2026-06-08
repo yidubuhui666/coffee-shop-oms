@@ -6,9 +6,10 @@
 {# 计算原价（未打折前） #}
 {% set ns = namespace(sub=0) %}
 {% for it in order.items %}{% set ns.sub = ns.sub + it.unit_price * it.quantity %}{% endfor %}
-{% set subtotal = ns.sub %}
+{# 统一为 float：避免 Decimal 与 float 混算（Jinja2 的 / 返回 float） #}
+{% set subtotal = ns.sub|float %}
 {% set redeem = (order.points_used or 0) / 100 %}
-{% set discount = subtotal - order.total_amount - redeem %}
+{% set discount = subtotal - order.total_amount|float - redeem %}
 
 <div class="section-title"><h2>订单 #{{ order.order_id }}
   <span class="tag {{ order.status }}">{{ st_zh.get(order.status, order.status) }}</span></h2>
