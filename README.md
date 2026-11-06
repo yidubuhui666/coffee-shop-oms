@@ -1,132 +1,139 @@
-# ☕ 咖啡店订单管理系统
+# Coffee Shop OMS · 咖啡店订单管理系统
 
-西南大学 2024 级计算机科学与技术 ·《数据库原理与应用》课程设计  
-Coffee Shop Order Management System (Flask + SQLAlchemy + SQLite/MySQL)
+**数据库课程团队项目** · Python / Flask / SQLAlchemy / MySQL
 
-**团队成员**
-- **114 杨帆**（组长）— 数据库设计、Flask 后端、集成测试
-- **092 许跃骞** — 前端模板与样式、演示数据、5 张截图、报告撰写、一键启动脚本
+围绕咖啡店业务构建订单、会员、商品、配方、原料库存和统计分析功能，展示关系数据库设计与 Python Web 后端的结合。
 
----
+[快速开始](#快速开始) · [数据库设计](#数据库设计) · [代码导航](#代码导航) · [验证范围](#验证范围) · [团队与课程材料](#团队与课程材料)
 
-## 🚀 一键启动
+## 界面预览
 
-| 平台 | 操作 |
-|---|---|
-| **macOS** | 双击 `启动咖啡店系统.command` |
-| **Windows** | 双击 `启动咖啡店系统.bat` |
+![仪表盘](docs/screenshots/01_dashboard.png)
 
-首次启动会自动创建虚拟环境、安装依赖（约 30 秒），然后浏览器自动打开 `http://127.0.0.1:5050`。
+<details>
+<summary>查看菜单、下单、订单与统计页面</summary>
 
-**登录账号**：
-- 管理员：`admin / admin123`
-- 咖啡师：`barista / barista123`
-- 收银员：`cashier / cashier123`
+![菜单](docs/screenshots/02_menu.png)
+![新建订单](docs/screenshots/03_new_order.png)
+![订单](docs/screenshots/04_orders.png)
+![统计](docs/screenshots/05_stats.png)
 
----
+</details>
 
-## 🛠️ 前置环境
+截图来自仓库已有课程演示材料，界面以实际运行版本为准。
 
-仅需 **Python 3.10+**：
-- macOS：系统自带（或 `brew install python`）
-- Windows：[官网下载](https://www.python.org/downloads/) — 安装时务必勾选 **"Add Python to PATH"**
+## 业务功能
 
----
+| 模块 | 当前代码包含的功能 |
+| --- | --- |
+| 订单 | 商品明细、数量校验、订单详情、日期与状态筛选、分页 |
+| 会员与优惠 | 会员等级折扣、优惠码、积分抵现与积分变更 |
+| 原料与配方 | 商品—原料关联、按配方计算下单消耗、库存维护 |
+| 商品与员工 | 分类、商品信息、员工及角色管理 |
+| 数据分析 | 仪表盘、统计页面及相关查询 |
+| 工程组织 | Flask 应用工厂、Blueprint 路由、ORM、演示数据脚本、冒烟测试 |
 
-## 📂 目录结构
+## 快速开始
 
-```
-├── 启动咖啡店系统.command / .bat    ← 一键启动脚本
-├── readme.txt                       ← 老师查阅用的简短说明
-├── docs/                            ← 实验报告 + ER 图 + 界面截图
-│   ├── 114Yangfan-...docx           (英文实验报告)
-│   ├── ER_Diagram.png
-│   └── screenshots/
-├── sql/                             ← 数据库 DDL/DML 脚本
-│   ├── schema.sql                   (9 表 + 2 视图 + 3 触发器 + 存储过程)
-│   └── data.sql
-└── src/                             ← Flask 应用源码
-    ├── app.py / models.py / config.py
-    ├── requirements.txt
-    ├── templates/                   (12 个 Jinja2 模板)
-    └── static/
-        ├── style.css
-        └── img/products/            (12 张商品图)
+需要 Python 3.10+ 和可访问的 MySQL。以下使用**全新的本地演示数据库**，不连接实际业务数据。
+
+### 1. 下载与安装
+
+```powershell
+git clone https://github.com/yidubuhui666/coffee-shop-oms.git
+cd coffee-shop-oms
+python -m venv .venv
+.\.venv\Scripts\python.exe -X utf8 -m pip install -r src/requirements.txt
 ```
 
----
+macOS / Linux 使用 `python3 -m venv .venv`，后续将 `.\.venv\Scripts\python.exe` 替换为 `./.venv/bin/python`。
 
-## 👥 协作流程（GitHub + Git）
+### 2. 准备数据库与环境变量
 
-### 一次性设置（每人各做一次）
+在 MySQL 中创建空数据库，例如：
 
-```bash
-# 1) Clone 仓库（把 URL 换成你们仓库的地址）
-git clone https://github.com/<你的用户名>/<仓库名>.git
-cd <仓库名>
-
-# 2) 配置身份
-git config user.name "你的名字"
-git config user.email "你的邮箱"
+```sql
+CREATE DATABASE coffee_shop_demo CHARACTER SET utf8mb4;
 ```
 
-### 日常开发流程
+使用有该数据库访问权限的本地用户，在 PowerShell 中设置：
 
-```bash
-# 1) 开始干活前：拉最新代码
-git pull
-
-# 2) 改文件...（用 VS Code / PyCharm / 任何编辑器）
-
-# 3) 看一下都改了啥
-git status
-git diff
-
-# 4) 提交本地
-git add .
-git commit -m "feat: 加了导出 Excel 功能"
-
-# 5) 推到云端
-git push
+```powershell
+$env:DATABASE_URL = "mysql+pymysql://USER:PASSWORD@127.0.0.1:3306/coffee_shop_demo?charset=utf8mb4"
+$env:SECRET_KEY = [guid]::NewGuid().ToString("N")
 ```
 
-### Commit 信息规范（建议）
+将 USER、PASSWORD 替换为本地配置，连接串中的特殊字符需要 URL 编码。环境变量必须在导入应用前设置；缺少 `DATABASE_URL` 时程序会直接报错。不要提交实际连接串或密钥。
 
-| 前缀 | 含义 | 例 |
-|---|---|---|
-| `feat:` | 新功能 | `feat: 菜单页加搜索框` |
-| `fix:`  | 修 bug | `fix: 库存负数不报错的问题` |
-| `docs:` | 改文档/报告 | `docs: 报告第 3 章补 SQL 截图` |
-| `style:`| 仅样式/格式 | `style: 统一按钮圆角` |
-| `refactor:` | 重构 | `refactor: 抽离 Order 业务逻辑` |
-| `chore:` | 杂项 | `chore: 升级 Flask 版本` |
+### 3. 初始化与启动
 
-### 任务认领（GitHub Issues）
-
-在仓库 Issues 标签下新建任务，互相 @ 对方，标 Label（`bug` / `enhancement` / `report` 等）。提交 commit 时带上 `#issue编号`，会自动关联。
-
----
-
-## 📦 提交给老师
-
-把整个项目压缩成 zip 即可（实际是 `git archive` 也行）：
-
-```bash
-# 排除 venv / __pycache__ / coffee.db
-zip -r submission.zip . -x "venv/*" "*/__pycache__/*" "*.pyc" "instance/*" ".git/*" ".DS_Store"
+```powershell
+.\.venv\Scripts\python.exe src/seed_relations.py
+.\.venv\Scripts\python.exe -m flask --app src/app.py run --host 127.0.0.1 --port 5050
 ```
 
-或者直接用根目录已有的 `docs/` + `sql/` + `src/` 目录手动打包。
+首次创建应用时，ORM 建表并在员工表为空时填充演示数据；`seed_relations.py` 继续补充配方与会员折扣。该脚本会重建配方关系，运行前应确认使用的是演示数据库。
 
----
+访问 **http://127.0.0.1:5050**。初始演示管理员账号为 `admin / admin123`，仅用于本地课程演示。
 
-## 📝 课程项目信息
+仓库已有 Windows / macOS 启动脚本，但不能替代数据库配置。Windows 的 `启动.bat` 可加载被 Git 忽略的 `src/.env.bat`；各脚本的环境处理不完全相同。
 
-- **项目名**：咖啡店订单管理系统 / Coffee Shop Order Management System
-- **团队成员**：
-  - 114 杨帆（组长）
-  - 092 许跃骞
-- **截止**：2026 年 5 月 31 日
-- **报告位置**（每人一份，内容相同）：
-  - `docs/114Yangfan-Coffee Shop Order Management System.docx`
-  - `docs/092Xuyueqian-Coffee Shop Order Management System.docx`
+## 数据库设计
+
+![课程 ER 图](docs/ER_Diagram.png)
+
+当前应用以 `src/models.py` 为运行模型，定义 **10 张表**：顾客、员工、分类、商品、优惠、订单、订单明细、原料、商品配方关系与会员折扣。
+
+重点关系包括：订单—明细的一对多、商品—原料的多对多、订单与顾客／员工／优惠的关联。金额使用 Numeric / Decimal 表示，订单查询使用关联预加载减少逐条读取关联对象的开销。
+
+### 课程 SQL 与运行模型的区别
+
+`sql/schema.sql` 保留课程阶段的 **9 张表、2 个视图、3 个触发器和 1 个存储过程**，并不与当前 ORM 完全一致：
+
+- SQL 使用 `product_ingredients.amount`，ORM 使用 `product_ingredient.consume_qty`。
+- ORM 额外包含 `member_discount` 和订单 `points_used` 字段。
+- Flask 路由已经处理部分金额、积分逻辑；旧 SQL 的触发器不是当前应用的初始化步骤。
+
+**运行当前 Web 应用使用空数据库 + ORM 建表；课程 SQL 请在另一个实验数据库中阅读和执行。** 不要将两套初始化流程叠加。ER 图也属于课程阶段材料，最新字段以 ORM 为准。
+
+## 代码导航
+
+```text
+src/
+  app.py                  应用工厂、扩展初始化与蓝图注册
+  config.py               环境变量配置
+  models.py               当前 ORM 模型
+  bootstrap.py            首次演示数据
+  routes/                 订单、库存、会员、统计等业务路由
+  templates/              Jinja2 页面
+  static/                 样式和商品图片
+  seed_*.py               演示数据及关系数据脚本
+  migration_points.py     旧数据库积分字段迁移
+sql/                      课程 DDL / DML
+tests/test_smoke.py        页面、登录保护、404、库存扣减测试
+docs/                     ER 图、截图及课程报告
+```
+
+推荐阅读顺序：`models.py` → `routes/orders.py` → `tests/test_smoke.py`。数据库协作约定见 [CLAUDE.md](CLAUDE.md)，已有数据库的结构调整应配套可重复执行的迁移脚本。
+
+## 验证范围
+
+```powershell
+.\.venv\Scripts\python.exe -X utf8 -m pip install pytest
+.\.venv\Scripts\python.exe -m pytest tests/test_smoke.py -v
+```
+
+测试文件包含 4 个测试函数，使用临时 SQLite 数据库，覆盖主要页面、登录重定向、404 和配方库存扣减。统计页不在这组测试范围内；这组结果不能替代 MySQL、并发订单或完整业务流程验证。
+
+这是教学演示系统：当前登录实现、订单状态流转及库存边界仍需要进一步完善，不应直接作为公网生产服务部署。付款方式字段用于业务记录，未接入实际支付平台。
+
+## 团队与课程材料
+
+西南大学 2024 级计算机科学与技术《数据库原理与应用》课程设计，由 **杨帆、许跃骞** 合作完成。项目归属为团队作品，具体个人贡献可结合课程报告、提交记录和成员说明了解。
+
+- [许跃骞课程报告](docs/092Xuyueqian-Coffee%20Shop%20Order%20Management%20System.docx)
+- [杨帆课程报告](docs/114Yangfan-Coffee%20Shop%20Order%20Management%20System.docx)
+- [简短课程说明](readme.txt)
+
+仓库未附开源许可证，使用或再分发代码、图片及课程材料前请确认相应授权。
+
